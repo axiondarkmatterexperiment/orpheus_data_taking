@@ -13,7 +13,7 @@ def monitor_experiment():
     log_hall_sensor()
     #Add other parts as other parts become functional. Currently thinking of:
     #  1) magnet supply current
-    #  2) log 
+    #  2) log outside can bottom temperature
 
 def establish_databases():
     ''' 
@@ -155,6 +155,7 @@ def log_magnet_temps():
     log_sensor(sensor_name_side_A, timestamp_side_A, val_raw_side_A, val_cal_side_A)
     log_sensor(sensor_name_side_B, timestamp_side_B, val_raw_side_B, val_cal_side_B)
 
+#This function accounts for whether the output is on or off. if the output is off then the applied current is zero, and this records it as such.
 def log_hall_sensor():
     update_current_task('logging hall sensor')
     #Send the query to the hall effect sensor's voltage readout
@@ -183,16 +184,19 @@ def log_hall_sensor():
 
     timestamp_hall_current, val_raw_hall_current = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, HALL_CURRENT_SCPI)
 
-    val_raw_hall_current = float(val_raw_hall_current)
+    OUTPUT_SCPI = "OUTP?\n"
+    timestamp_throwaway, output_str = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, OUTPUT_SCPI)
+
+    val_raw_hall_current = float(output_str)*float(val_raw_hall_current)
 
     #Log the magnet side A temperature sensor value
-    sensor_name_hall_current = "hall_current"
+    sensor_name_hall_current = "hall_sensor_applied_current"
 
     val_cal_hall_current = val_raw_hall_current #I believe no calibration needs to be done for this. So this is redundant but keeping it for consistency
 
     log_sensor(sensor_name_hall_current, timestamp_hall_current, val_raw_hall_current, val_cal_hall_current)
 
-def set_hall_excitation_current(current_in_amps):
+def set_hall_excitation_current(current_in_amps): #This currently causes an error due to timeout when sending the SCPI command
     update_current_task('setting hall sensor excitation current')
     IP_ADDRESS="192.168.25.14"
     PORT=7655 #the manual mentions this one on page 11-5 "You can set the terminator that is used to send data from the command control server at port 7655"
