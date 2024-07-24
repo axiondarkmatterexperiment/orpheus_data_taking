@@ -5,12 +5,12 @@ import psycopg2
 import socket
 import datetime
 import pytz
-
-from calibration_functions import SN_U04844, SN_X201099, SN_68179, PT_100
+#                                 side A temp, side B temp, hall 1, hall 2,  hall 3,   hall 4,  outside of can temp sensor
+from calibration_functions import SN_U04844, SN_X201099, SN_68179, SN_68253, SN_64753, SN_67247, PT_100
 
 def monitor_experiment():
     log_magnet_temps()
-    log_hall_sensor()
+    log_hall_sensors()
     #Add other parts as other parts become functional. Currently thinking of:
     #  1) magnet supply current
     #  2) log outside can bottom temperature
@@ -156,23 +156,43 @@ def log_magnet_temps():
     log_sensor(sensor_name_side_B, timestamp_side_B, val_raw_side_B, val_cal_side_B)
 
 #This function accounts for whether the output is on or off. if the output is off then the applied current is zero, and this records it as such.
-def log_hall_sensor():
+def log_hall_sensors():
     update_current_task('logging hall sensor')
     #Send the query to the hall effect sensor's voltage readout
     IP_ADDRESS="192.168.25.11"
     PORT=1234 #The one that Raphael used. I tried a few other values and got the error that "the target machine actively refused" the connection
     TIMEOUT=5 #This was the value Raphael used
+    
+    #Hall sensor 1
     HALL_SENSOR_SCPI = "MEAS:VOLT? (@101)\n" #Should I specify the resolution and whatever? Check documentation
-
     timestamp_hall_sensor, val_raw_hall_sensor = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, HALL_SENSOR_SCPI)
-
     val_raw_hall_sensor = float(val_raw_hall_sensor)
-
-    #Log the magnet side A temperature sensor value
-    sensor_name_hall_sensor = "hall_sensor"
-
+    sensor_name_hall_sensor = "hall_sensor_1"
     val_cal_hall_sensor = SN_68179(val_raw_hall_sensor) #nonsense placeholder for right now. Will drop the table before putting in real values.
+    log_sensor(sensor_name_hall_sensor, timestamp_hall_sensor, val_raw_hall_sensor, val_cal_hall_sensor)
 
+    #Hall sensor 2
+    HALL_SENSOR_SCPI = "MEAS:VOLT? (@102)\n" #Should I specify the resolution and whatever? Check documentation
+    timestamp_hall_sensor, val_raw_hall_sensor = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, HALL_SENSOR_SCPI)
+    val_raw_hall_sensor = float(val_raw_hall_sensor)
+    sensor_name_hall_sensor = "hall_sensor_2"
+    val_cal_hall_sensor = SN_68253(val_raw_hall_sensor) #nonsense placeholder for right now. Will drop the table before putting in real values.
+    log_sensor(sensor_name_hall_sensor, timestamp_hall_sensor, val_raw_hall_sensor, val_cal_hall_sensor)
+
+    #Hall sensor 3
+    HALL_SENSOR_SCPI = "MEAS:VOLT? (@103)\n" #Should I specify the resolution and whatever? Check documentation
+    timestamp_hall_sensor, val_raw_hall_sensor = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, HALL_SENSOR_SCPI)
+    val_raw_hall_sensor = float(val_raw_hall_sensor)
+    sensor_name_hall_sensor = "hall_sensor_3"
+    val_cal_hall_sensor = SN_64753(val_raw_hall_sensor) #nonsense placeholder for right now. Will drop the table before putting in real values.
+    log_sensor(sensor_name_hall_sensor, timestamp_hall_sensor, val_raw_hall_sensor, val_cal_hall_sensor)
+   
+    #Hall sensor 4
+    HALL_SENSOR_SCPI = "MEAS:VOLT? (@104)\n" #Should I specify the resolution and whatever? Check documentation
+    timestamp_hall_sensor, val_raw_hall_sensor = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, HALL_SENSOR_SCPI)
+    val_raw_hall_sensor = float(val_raw_hall_sensor)
+    sensor_name_hall_sensor = "hall_sensor_4"
+    val_cal_hall_sensor = SN_67247(val_raw_hall_sensor) #nonsense placeholder for right now. Will drop the table before putting in real values.
     log_sensor(sensor_name_hall_sensor, timestamp_hall_sensor, val_raw_hall_sensor, val_cal_hall_sensor)
 
     #Check the excitation current -- this is technically not a measurement, but just to document that it is at 100 mA, as we want it to be
