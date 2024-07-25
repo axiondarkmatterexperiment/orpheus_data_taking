@@ -15,8 +15,8 @@ while True:
         timestamp = datetime.datetime.now()
         log_error(timestamp, err)
         print(err)
-        time.sleep(5)
+        time.sleep(1)
 
 
 
-    time.sleep(5)
+    time.sleep(1)
