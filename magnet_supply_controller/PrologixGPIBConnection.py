@@ -23,6 +23,7 @@ class PrologixGPIBConnection:
         self.sock.sendall(message.encode())
 
     def read(self,end_of_message_character=10):
+        self.sock.sendall("++read eoi\n".encode())
         data=self.sock.recv(1024)
         while len(data)==0 or data[-1]!=end_of_message_character:
             data+=self.sock.recv(1024)
