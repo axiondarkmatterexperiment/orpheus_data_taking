@@ -22,8 +22,8 @@ class PowerSupply: # Agilent E3631A
     
     def get_voltage(self):
         #example 
-        command="MEAS:VOLT:DC? P6V"
-        self.connection.send_message(self.gpib_address,"VOLT?") #this may not be the right command
+        command="SOUR:VOLT?"
+        self.connection.send_message(self.gpib_address,command) #this may not be the right command
         return float(self.connection.read().decode())
 
     def on_off(self,on):
