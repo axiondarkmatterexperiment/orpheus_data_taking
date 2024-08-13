@@ -1,7 +1,7 @@
 from PrologixGPIBConnection import *
 from Instruments import *
 
-ip_address="10.168.25.15" #this is the ip address of the prologix controller
+ip_address="192.168.25.15" #this is the ip address of the prologix controller
 power_supply_gpib_address=0 #this is the address of the power supply
 voltmeter_gpib_address=3 #this is the address of the voltmeter
 
@@ -10,6 +10,9 @@ connection=PrologixGPIBConnection(ip_address)
 try:
     print("connecting to prologix controller")
     connection.connect()
+except TimeoutError as e:
+    print("timed out")
+    exit()
 except OSError as e:
     print("unable to connect to the prologix controller at ip address {}".format(ip_address))
     print(e)
