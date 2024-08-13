@@ -2,7 +2,7 @@ import socket
 
 class PrologixGPIBConnection:
     def __init__(self, ip_address):
-        self.host=host
+        self.host=ip_address
         self.port=1234
         self.sock=None
 

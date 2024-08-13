@@ -1,5 +1,4 @@
-from typing import Any
-import PrologixGPIBConnection
+from PrologixGPIBConnection import PrologixGPIBConnection
 
 class PowerSupply: # Agilent E3631A
     def __init__(self,connection,gpib_address):
