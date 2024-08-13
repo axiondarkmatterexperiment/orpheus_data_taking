@@ -5,8 +5,15 @@ ip_address="10.168.25.15" #this is the ip address of the prologix controller
 power_supply_gpib_address=0 #this is the address of the power supply
 voltmeter_gpib_address=3 #this is the address of the voltmeter
 
+print("creating connection")
 connection=PrologixGPIBConnection(ip_address)
-connection.connect()
+try:
+    print("connecting to prologix controller")
+    connection.connect()
+except OSError as e:
+    print("unable to connect to the prologix controller at ip address {}".format(ip_address))
+    print(e)
+    exit()
 
 powerSupply=PowerSupply(connection,power_supply_gpib_address)
 voltmeter=Voltmeter(connection,voltmeter_gpib_address)

@@ -8,6 +8,7 @@ class PrologixGPIBConnection:
 
     def connect(self):
         self.sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        self.sock.settimeout(5)
         return self.sock.connect((self.host,self.port))
 
     def disconnect(self):
