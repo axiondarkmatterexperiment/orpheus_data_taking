@@ -26,6 +26,10 @@ class PowerSupply: # Agilent E3631A
         self.connection.send_message(self.gpib_address,command) #this may not be the right command
         return float(self.connection.read().decode())
 
+    def get_on_off(self):
+        self.connection.send_message(self.gpib_address,"OUTP?")
+        response=self.connection.read().decode()
+        
     def on_off(self,on):
         if on:
             self.connection.send_message(self.gpib_address,"OUTP ON") #this may not be the right command
