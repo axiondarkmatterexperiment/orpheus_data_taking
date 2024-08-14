@@ -3,6 +3,7 @@ from PrologixGPIBConnection import *
 from Instruments import *
 import time
 import copy
+import yaml
 
 #this class is the thread that regulates the magnet
 #Rule: any function that starts with a "_" is not thread safe
@@ -32,7 +33,7 @@ class MagnetRegulator:
 
         #timing stuff
         self.loop_time_ns=100000000 #nanoseconds per loop
-        self.last_time_ns=time.gettime_ns() #this is the time in nanoseconds
+        self.last_time_ns=time.clock_gettime_ns() #this is the time in nanoseconds
 
     def read_voltmeter_voltage(self):
         voltage=self.voltmeter.get_voltage()
@@ -79,12 +80,12 @@ class MagnetRegulator:
                 self.read_voltmeter_voltage()
 
                 ##update the PID loop
-                self.dt=time.gettime_ns()-self.last_time_ns
+                self.dt=time.clock_gettime_ns()-self.last_time_ns
                 ##decide if I have a panic condition
                 ##set the voltage on the power supply
 
                 #sleep until next loop
-                self.last_time_ns=time.gettime_ns()
+                self.last_time_ns=time.clock_gettime_ns()
                 sleep_time=(self.loop_time_ns-self.last_time_ns)/1e9
                 if sleep_time>0:
                     time.sleep(sleep_time)

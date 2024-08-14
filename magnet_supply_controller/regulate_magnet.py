@@ -2,7 +2,7 @@ from MagnetRegulator import *
 from select import select
 import sys
 
-config_file_name="magnet_regulator_config.yaml"
+config_file_name="magnet_controller_config.yaml"
 
 #create regulator object
 regulator=MagnetRegulator(config_file_name)
