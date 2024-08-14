@@ -12,7 +12,7 @@ regulator=MagnetRegulator(config_file_name)
 #start the thread
 regulator.start_thread()
 
-report_interval=0.1
+report_interval=1.0
 while True:
     time.sleep(report_interval)
     print(regulator.get_status_string())

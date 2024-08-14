@@ -60,7 +60,7 @@ class MagnetRegulator:
             print("configuring power supply")
             self.powerSupply.configure()
             print("configuring voltmeter")
-            self.selfvoltmeter.configure()
+            self.voltmeter.configure()
         except TimeoutError as e:
             print("connection timed out")
         except OSError as e:
@@ -87,7 +87,7 @@ class MagnetRegulator:
 
                 #sleep until next loop
                 self.last_time=time.time()
-                sleep_time=self.loop_time_ns-self.last_time
+                sleep_time=self.loop_time-self.last_time
                 if sleep_time>0:
                     time.sleep(sleep_time)
             except TimeoutError as e:
