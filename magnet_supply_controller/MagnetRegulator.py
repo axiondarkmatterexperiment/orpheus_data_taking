@@ -32,8 +32,8 @@ class MagnetRegulator:
         self.should_quit = False
 
         #timing stuff
-        self.loop_time_ns=100000000 #nanoseconds per loop
-        self.last_time_ns=time.clock_gettime_ns() #this is the time in nanoseconds
+        self.loop_time=0.1 #seconds per loop
+        self.last_time=time.time() #this is the time in seconds
 
     def read_voltmeter_voltage(self):
         voltage=self.voltmeter.get_voltage()
@@ -80,13 +80,14 @@ class MagnetRegulator:
                 self.read_voltmeter_voltage()
 
                 ##update the PID loop
-                self.dt=time.clock_gettime_ns()-self.last_time_ns
+                self.dt=time.time()-self.last_time
+
                 ##decide if I have a panic condition
                 ##set the voltage on the power supply
 
                 #sleep until next loop
-                self.last_time_ns=time.clock_gettime_ns()
-                sleep_time=(self.loop_time_ns-self.last_time_ns)/1e9
+                self.last_time=time.time()
+                sleep_time=self.loop_time_ns-self.last_time
                 if sleep_time>0:
                     time.sleep(sleep_time)
             except TimeoutError as e:
