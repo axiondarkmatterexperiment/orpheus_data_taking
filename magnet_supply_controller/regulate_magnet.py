@@ -2,7 +2,7 @@ from MagnetRegulator import *
 from select import select
 import sys
 
-config_file_name="magnet_regulator_config.yaml"
+config_file_name="magnet_controller_config.yaml"
 
 #create regulator object
 regulator=MagnetRegulator(config_file_name)
@@ -12,7 +12,7 @@ regulator=MagnetRegulator(config_file_name)
 #start the thread
 regulator.start_thread()
 
-report_interval=0.1
+report_interval=1.0
 while True:
     time.sleep(report_interval)
     print(regulator.get_status_string())

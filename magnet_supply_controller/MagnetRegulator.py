@@ -100,7 +100,7 @@ class MagnetRegulator:
             print("configuring power supply")
             self.powerSupply.configure()
             print("configuring voltmeter")
-            self.selfvoltmeter.configure()
+            self.voltmeter.configure()
         except TimeoutError as e:
             print("connection timed out")
         except OSError as e:
