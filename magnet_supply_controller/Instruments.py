@@ -4,6 +4,7 @@ class PowerSupply: # Agilent E3631A
     def __init__(self,connection,gpib_address):
         self.connection=connection
         self.gpib_address=gpib_address
+        self.bounds=None
 
     def configure(self):
         #configures the power supply the way I want it to be configured
@@ -12,6 +13,11 @@ class PowerSupply: # Agilent E3631A
         return True
         
     def set_voltage(self,voltage):
+        if self.bounds:
+            if voltage>self.bounds[1]:
+                voltage=self.bounds[1]
+            if voltage<self.bounds[0]:
+                voltage=self.bounds[0]
         #example: APPL P6V, 3.0, 1.0 #+6V supply to 3V rated at 1A
 
         #set voltage in volts
