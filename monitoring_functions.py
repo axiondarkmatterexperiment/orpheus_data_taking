@@ -10,6 +10,7 @@ from calibration_functions import SN_U04844, SN_X201099, SN_68179, SN_68253, SN_
 
 def monitor_experiment():
     log_magnet_temps()
+    log_outside_can_temp()
     log_hall_sensors()
     #Add other parts as other parts become functional. Currently thinking of:
     #  1) magnet supply current
