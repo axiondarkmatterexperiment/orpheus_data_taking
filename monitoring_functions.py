@@ -155,7 +155,7 @@ def log_magnet_temps():
     log_sensor(sensor_name_side_A, timestamp_side_A, val_raw_side_A, val_cal_side_A)
     log_sensor(sensor_name_side_B, timestamp_side_B, val_raw_side_B, val_cal_side_B)
 
-def log_outside_can_temps():
+def log_outside_can_temp():
     update_current_task('logging magnet temperatures')
     #Send the query to the LHe level sensor
     IP_ADDRESS="192.168.25.11"
