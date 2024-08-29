@@ -41,6 +41,7 @@ class MagnetRegulator:
         self.pid.output_limits=(0,2.0) #IMPORTANT
         self.pid.sample_time=0.2 #pid has its own timing
         self.pid_lock= threading.Lock()
+        self.pid_enabled=False
 
         #threading stuff
         self.thread = threading.Thread(target=self._thread_loop)
@@ -121,14 +122,14 @@ class MagnetRegulator:
 
                 ##update the PID loop
                 #self.dt=time.time()-self.last_time
-                with self.pid_lock:
-                    control=self.pid(self.get_last_current_measurement())
-                    p,i,d=self.pid.components
-                    self.last_p_i_d=(p,i,d)
-
-                ##decide if I have a panic condition
-                ##set the voltage on the power supply
-                self.set_power_supply_voltage(control)
+                if self.pid_enabled:
+                    with self.pid_lock:
+                        control=self.pid(self.get_last_current_measurement())
+                        p,i,d=self.pid.components
+                        self.last_p_i_d=(p,i,d)
+                    ##decide if I have a panic condition
+                    ##set the voltage on the power supply
+                    self.set_power_supply_voltage(control)
 
                 #sleep until next loop
                 self.last_time=time.time()

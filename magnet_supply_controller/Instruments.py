@@ -43,9 +43,24 @@ class PowerSupply: # Agilent E3631A
             self.connection.send_message(self.gpib_address,"OUTP OFF") #    this may not be the right command
         return self.get_on_off()
     
+class Voltmeter: #HP 3457A
+    def __init__(self,connection,gpib_address):
+        self.connection=connection
+        self.gpib_address=gpib_address
+
+    def configure(self):
+        self.connection.send_message(self.gpib_address,"DCV")
+        return True
+        
+
+    def get_voltage(self):
+        #self.connection.send_message(self.gpib_address,"?") #this isn't the right command
+        self.connection.send_message(self.gpib_address,"TRIG SGL") #this isn't the right command
+        return float(self.connection.read().decode())
 
 
-class Voltmeter: # Fluke 8840A
+
+class OldVoltmeter: # Fluke 8840A
     def __init__(self,connection,gpib_address):
         self.connection=connection
         self.gpib_address=gpib_address

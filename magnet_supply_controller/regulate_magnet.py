@@ -1,22 +1,40 @@
-from MagnetRegulator import *
-from select import select
-import sys
+from MagnetRegulator import MagnetRegulator
+from blessed import Terminal
+from MagnetDisplay import MagnetDisplay
 
-config_file_name="magnet_controller_config.yaml"
-
-#create regulator object
-regulator=MagnetRegulator(config_file_name)
-
-#TODO initial settings
-
-#start the thread
+term=Terminal()
+display=MagnetDisplay()
+regulator=MagnetRegulator("magnet_controller_config.yaml")
 regulator.start_thread()
+with term.fullscreen(), term.cbreak(), term.hidden_cursor():
+    while True:
+        #update my current
+        current=regulator.get_last_current_measurement()
+        display.set_measured_current(current)
+        v=regulator.get_last_ps_voltage()
+        display.set_voltage(v)
+        display.set_pid(regulator.get_last_p_i_d())
+        display.set_set_current(regulator.get_target_current())
 
-report_interval=1.0
-while True:
-    time.sleep(report_interval)
-    print(regulator.get_status_string())
-    dr,dw,de = select([sys.stdin], [], [], 0)
-    if dr != []:
-        break
+
+
+        val = term.inkey(timeout=0.1)
+        if val:
+            if val.name=="KEY_ENTER":
+                input_text=display.input_tile.text
+                display.input_tile.text=""
+                if input_text=="quit":
+                    break
+                try:
+                    set_current=float(input_text)
+                    #val=regulator.set_power_supply_voltage(set_current)
+                    regulator.set_target_current(set_current)
+                    #display.set_set_current(set_current)
+                except ValueError:
+                    display.message_tile.text="Invalid input"
+            else:
+                display.input_tile.handle_key(val)
+        display.update_ui(term)
 regulator.should_quit=True
+term.exit_fullscreen()
+
