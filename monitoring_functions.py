@@ -10,6 +10,7 @@ from calibration_functions import SN_U04844, SN_X201099, SN_68179, SN_68253, SN_
 
 def monitor_experiment():
     log_magnet_temps()
+    log_outside_can_temp()
     log_hall_sensors()
     #Add other parts as other parts become functional. Currently thinking of:
     #  1) magnet supply current
@@ -154,6 +155,25 @@ def log_magnet_temps():
 
     log_sensor(sensor_name_side_A, timestamp_side_A, val_raw_side_A, val_cal_side_A)
     log_sensor(sensor_name_side_B, timestamp_side_B, val_raw_side_B, val_cal_side_B)
+
+def log_outside_can_temp():
+    update_current_task('logging magnet temperatures')
+    #Send the query to the LHe level sensor
+    IP_ADDRESS="192.168.25.11"
+    PORT=1234 #The one that Raphael used. I tried a few other values and got the error that "the target machine actively refused" the connection
+    TIMEOUT=5 #This was the value Raphael used
+    MEAS_OUTSIDE_CAN = "MEAS:FRES? (@106)\n" #Should I specify the resolution and whatever? Check documentation
+
+    timestamp_outside_can, val_raw_outside_can = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, MEAS_OUTSIDE_CAN)
+
+    val_raw_outside_can = float(val_raw_outside_can)
+
+    #Log the magnet side A temperature sensor value
+    sensor_name_outside_can = "outside_can_temp"
+
+    val_cal_outside_can = PT_100(val_raw_outside_can)
+
+    log_sensor(sensor_name_outside_can, timestamp_outside_can, val_raw_outside_can, val_cal_outside_can)
 
 #This function accounts for whether the output is on or off. if the output is off then the applied current is zero, and this records it as such.
 def log_hall_sensors():
