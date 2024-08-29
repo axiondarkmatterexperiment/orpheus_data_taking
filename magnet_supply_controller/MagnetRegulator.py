@@ -36,12 +36,12 @@ class MagnetRegulator:
         self.last_p_i_d=(0,0,0) #uses PID lock
 
         #pid
-        kp,ki,kd=(1.0,0.1,0.1)
+        kp,ki,kd=(0.01,0.0,0.0)
         self.pid = PID(kp, ki, kd, setpoint=0)
         self.pid.output_limits=(0,2.0) #IMPORTANT
         self.pid.sample_time=0.2 #pid has its own timing
         self.pid_lock= threading.Lock()
-        self.pid_enabled=False
+        self.pid_enabled=True
 
         #threading stuff
         self.thread = threading.Thread(target=self._thread_loop)
@@ -78,7 +78,7 @@ class MagnetRegulator:
             return self.last_p_i_d
         
     def get_last_current_measurement(self):
-        return self.get_last_voltmeter_voltage()/self.current_resistor_calibration_ohms
+        return -self.get_last_voltmeter_voltage()/self.current_resistor_calibration_ohms
         
     def set_target_current(self,current):
         with self.pid_lock:
@@ -98,9 +98,9 @@ class MagnetRegulator:
     def connect(self):
         try:
             self.connection.connect()
-            print("configuring power supply")
+            #print("configuring power supply")
             self.powerSupply.configure()
-            print("configuring voltmeter")
+            #print("configuring voltmeter")
             self.voltmeter.configure()
         except TimeoutError as e:
             print("connection timed out")
