@@ -236,7 +236,8 @@ def log_hall_sensors():
 
     log_sensor(sensor_name_hall_current, timestamp_hall_current, val_raw_hall_current, val_cal_hall_current)
 
-def set_hall_excitation_current(current_in_amps): #This does not allow you to set the current above 0.1 Amps
+#Current in amps is input as a floating point, output_setting as a string (either "ON" or "OFF")
+def set_hall_excitation_current(current_in_amps, output_setting): #This does not allow you to set the current above 0.1 Amps
     update_current_task('setting hall sensor excitation current')
     IP_ADDRESS="192.168.25.14"
     PORT=7655 #the manual mentions this one on page 11-5 "You can set the terminator that is used to send data from the command control server at port 7655"
@@ -256,6 +257,9 @@ def set_hall_excitation_current(current_in_amps): #This does not allow you to se
     write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
 
     SCPI_string = "SOUR:LEV " + str(current_in_amps) + "\n" #Set the current level to 0.1 Amps (100 mA)
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+
+    SCPI_string = "OUTP:STAT " + output_setting + "\n"
     write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
 
     output_type_voltage_or_current = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "SOUR:FUNC?\n")[1]
