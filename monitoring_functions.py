@@ -236,12 +236,11 @@ def log_hall_sensors():
 
     log_sensor(sensor_name_hall_current, timestamp_hall_current, val_raw_hall_current, val_cal_hall_current)
 
-def set_hall_excitation_current(current_in_amps): #This currently causes an error due to timeout when sending the SCPI command
+def set_hall_excitation_current(current_in_amps): #This does not allow you to set the current above 0.1 Amps
     update_current_task('setting hall sensor excitation current')
     IP_ADDRESS="192.168.25.14"
     PORT=7655 #the manual mentions this one on page 11-5 "You can set the terminator that is used to send data from the command control server at port 7655"
     TIMEOUT=5 #tested and works so far
-
 
     SCPI_string = "*IDN?\n" #Check connection
     print(query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)[1])
@@ -251,13 +250,13 @@ def set_hall_excitation_current(current_in_amps): #This currently causes an erro
     # query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
     
     SCPI_string = "SOUR:FUNC CURR\n" #Set the current range to max out at the desired current (running too much current might damage the sensor)
-    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
     
     SCPI_string = "SOUR:RANG 0.1\n" #Set the current range to max out at the desired current (running too much current might damage the sensor)
-    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
 
-    SCPI_string = "SOUR:LEV 0.1\n" #Set the current level to 0.1 Amps (100 mA)
-    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    SCPI_string = "SOUR:LEV " + str(current_in_amps) + "\n" #Set the current level to 0.1 Amps (100 mA)
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
 
     output_type_voltage_or_current = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "SOUR:FUNC?\n")[1]
     output_in_volts_or_amps = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "SOUR:LEV?\n")[1]
@@ -303,3 +302,17 @@ def query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string):
     val_raw = recv_bytes.decode()
 
     return timestamp, val_raw
+
+#This is for sending SCPI commands which you don't expect any response for. (Using query_SCPI for said commands causes a timeout error).
+#NOTE: that this only TRIES to write your command. It doesn't check if it actually worked. To check if it worked you can use query_SCPI.
+def write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string):
+    
+    # update_current_task('sending SCPI Query:',SCPI_string) #This might just be annoying
+    #Establish connection via the socket
+    socket_connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    socket_connection.settimeout(TIMEOUT)
+    socket_connection.connect((IP_ADDRESS, PORT))
+
+    # Send encoded message and record time of the measurement
+    socket_connection.sendall(SCPI_string.encode())
+    return
