@@ -1,17 +1,21 @@
 #Log sensor values to the magnet_monitoring table
 #assumes table is already made
-
 import psycopg2
 import socket
 import datetime
 import pytz
 #                                 side A temp, side B temp, hall 1, hall 2,  hall 3,   hall 4,  outside of can temp sensor
 from calibration_functions import SN_U04844, SN_X201099, SN_68179, SN_68253, SN_64753, SN_67247, PT_100
+from MagnetRegulator import MagnetRegulator
+
+regulator=MagnetRegulator("magnet_controller_config.yaml")
 
 def monitor_experiment():
     log_magnet_temps()
     log_outside_can_temp()
     log_hall_sensors()
+    log_magnet_measured_current()
+    log_magnet_target_current()
     #Add other parts as other parts become functional. Currently thinking of:
     #  1) magnet supply current
     #  2) log outside can bottom temperature
@@ -306,6 +310,23 @@ def query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string):
     val_raw = recv_bytes.decode()
 
     return timestamp, val_raw
+
+def log_magnet_measured_current():
+    sensor_name = "magnet_measured_current"
+    val_raw=regulator.get_last_voltmeter_voltage()
+    val_cal=regulator.get_last_current_measurement()
+    timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
+
+    log_sensor(sensor_name, timestamp, val_raw, val_cal)
+    
+def log_magnet_target_current():
+    sensor_name = "magnet_target_current"
+    val_raw=regulator.get_target_current()
+    val_cal=regulator.get_target_current()
+    timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
+
+    log_sensor(sensor_name, timestamp, val_raw, val_cal)
+    
 
 #This is for sending SCPI commands which you don't expect any response for. (Using query_SCPI for said commands causes a timeout error).
 #NOTE: that this only TRIES to write your command. It doesn't check if it actually worked. To check if it worked you can use query_SCPI.
