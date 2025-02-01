@@ -14,6 +14,7 @@ def monitor_experiment():
     log_magnet_temps()
     log_outside_can_temp()
     log_hall_sensors()
+    log_resistor_dewar_bottom()
     log_magnet_measured_current()
     log_magnet_target_current()
     #Add other parts as other parts become functional. Currently thinking of:
@@ -178,6 +179,27 @@ def log_outside_can_temp():
     val_cal_outside_can = PT_100(val_raw_outside_can)
 
     log_sensor(sensor_name_outside_can, timestamp_outside_can, val_raw_outside_can, val_cal_outside_can)
+
+
+
+def log_outside_can_temp():
+    update_current_task('logging magnet resistor at the bottom of the dewar')
+    #Send the query to the LHe level sensor
+    IP_ADDRESS="192.168.25.11"
+    PORT=1234 #The one that Raphael used. I tried a few other values and got the error that "the target machine actively refused" the connection
+    TIMEOUT=5 #This was the value Raphael used
+    MEAS_OUTSIDE_CAN = "MEAS:FRES? (@109)\n" #Should I specify the resolution and whatever? Check documentation
+
+    timestamp_dewar_resistor, val_raw_dewar_resistor = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, MEAS_OUTSIDE_CAN)
+
+    val_raw_dewar_resistor = float(val_raw_dewar_resistor)
+
+    #Log the magnet side A temperature sensor value
+    sensor_name_outside_can = "dewar_bottom_resistor_resistance"
+
+    val_cal_outside_can = val_raw_dewar_resistor
+
+    log_sensor(sensor_name_dewar_resistor, timestamp_dewar_resistor, val_raw_dewar_resistor, val_cal_dewar_resistor)
 
 #This function accounts for whether the output is on or off. if the output is off then the applied current is zero, and this records it as such.
 def log_hall_sensors():
