@@ -186,22 +186,22 @@ def log_outside_can_temp():
 
 
 
-def log_outside_can_temp():
+def log_resistor_dewar_bottom():
     update_current_task('logging magnet resistor at the bottom of the dewar')
     #Send the query to the LHe level sensor
     IP_ADDRESS="192.168.25.11"
     PORT=1234 #The one that Raphael used. I tried a few other values and got the error that "the target machine actively refused" the connection
     TIMEOUT=5 #This was the value Raphael used
-    MEAS_OUTSIDE_CAN = "MEAS:FRES? (@109)\n" #Should I specify the resolution and whatever? Check documentation
+    MEAS_DEWAR_RESISTOR = "MEAS:FRES? (@109)\n" #Should I specify the resolution and whatever? Check documentation
 
-    timestamp_dewar_resistor, val_raw_dewar_resistor = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, MEAS_OUTSIDE_CAN)
+    timestamp_dewar_resistor, val_raw_dewar_resistor = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, MEAS_DEWAR_RESISTOR)
 
     val_raw_dewar_resistor = float(val_raw_dewar_resistor)
 
     #Log the magnet side A temperature sensor value
-    sensor_name_outside_can = "dewar_bottom_resistor_resistance"
+    sensor_name_dewar_resistor = "dewar_bottom_resistor_resistance"
 
-    val_cal_outside_can = val_raw_dewar_resistor
+    val_cal_dewar_resistor = val_raw_dewar_resistor
 
     log_sensor(sensor_name_dewar_resistor, timestamp_dewar_resistor, val_raw_dewar_resistor, val_cal_dewar_resistor)
 
