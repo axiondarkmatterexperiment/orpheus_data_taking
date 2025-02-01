@@ -192,7 +192,7 @@ def log_resistor_dewar_bottom():
     IP_ADDRESS="192.168.25.11"
     PORT=1234 #The one that Raphael used. I tried a few other values and got the error that "the target machine actively refused" the connection
     TIMEOUT=5 #This was the value Raphael used
-    MEAS_DEWAR_RESISTOR = "MEAS:FRES? (@109)\n" #Should I specify the resolution and whatever? Check documentation
+    MEAS_DEWAR_RESISTOR = "MEAS:RES? (@109)\n" #Should I specify the resolution and whatever? Check documentation
 
     timestamp_dewar_resistor, val_raw_dewar_resistor = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, MEAS_DEWAR_RESISTOR)
 
