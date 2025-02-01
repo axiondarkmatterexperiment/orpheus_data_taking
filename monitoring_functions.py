@@ -1,5 +1,9 @@
 #Log sensor values to the magnet_monitoring table
 #assumes table is already made
+import sys
+import os
+
+sys.path.insert(0, 'magnet_supply_controller')
 import psycopg2
 import socket
 import datetime
