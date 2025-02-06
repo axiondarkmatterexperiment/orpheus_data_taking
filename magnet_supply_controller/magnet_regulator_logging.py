@@ -1,6 +1,6 @@
 import psycopg2
 
-def create_magnet_regulaor_table():
+def create_magnet_regulator_table():
     ''' 
     Set up connection to the psql database
     '''
