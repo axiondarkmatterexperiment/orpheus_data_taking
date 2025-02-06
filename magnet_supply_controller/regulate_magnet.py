@@ -1,7 +1,4 @@
-import sys
-import os
-sys.path.insert(0,'..')
-from monitoring_functions import log_sensor
+from magnet_regulator_logging import create_magnet_regulator_table, log_magnet_regulator_value
 import datetime
 import pytz
 
@@ -9,6 +6,7 @@ from MagnetRegulator import MagnetRegulator
 from blessed import Terminal
 from MagnetDisplay import MagnetDisplay
 
+create_magnet_regulator_table()
 term=Terminal()
 display=MagnetDisplay()
 regulator=MagnetRegulator("magnet_controller_config.yaml")
@@ -18,7 +16,7 @@ with term.fullscreen(), term.cbreak(), term.hidden_cursor():
         #update my current
         current=regulator.get_last_current_measurement()
         timestamp=datetime.datetime.now(pytz.timezone('US/Pacific'))
-        log_sensor("magnet_measured_current",timestamp,current,current)
+        log_magnet_regulator_value("magnet_measured_current",timestamp,current,current)
         display.set_measured_current(current)
         v=regulator.get_last_ps_voltage()
         display.set_voltage(v)
