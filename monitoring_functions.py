@@ -292,20 +292,28 @@ def set_hall_excitation_current(current_in_amps, output_setting): #This does not
     
     return output_type_voltage_or_current, output_in_volts_or_amps
 
+#This function assumes that the LHe level sensor box is already in CONTINUOUS mode for measurements
+# this is because it is blocking write commands, and we can only request info from it. I'm not sure why.
+# so we need to have the level sensor continually read the level, then we can query for it's last measurement with MEAS?
+# It also assumes that the sensor is reading in inches.
+# Then the val_raw is in inches, and the val_cal is in percentage of the sensor length
 def log_LHe_level():
     update_current_task('logging LHe level')
     #Send the query to the LHe level sensor
     IP_ADDRESS="192.168.25.13"
     PORT=4266 #The one that Raphael used. I tried a few other values and got the error that "the target machine actively refused" the connection
     TIMEOUT=5 #This was the value Raphael used
-    SCPI_string = "******\n" #I need to figure out what to put here
+    SCPI_string = "MEAS?\n" #I need to figure out what to put here
+    
+    sensor_length_cm = 120
+    sensor_length_inches = 120/2.54
 
     timestamp, val_raw = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
 
     #Log the magnet side A temperature sensor value
     sensor_name = "LHe_level"
 
-    val_cal = val_raw*2 #nonsense placeholder for right now. Will drop the table before putting in real values.
+    val_cal = 100*val_raw/sensor_length_inches #assuming that the sensor is set to read out in inches
 
     log_sensor(sensor_name, timestamp, val_raw, val_cal)
 
