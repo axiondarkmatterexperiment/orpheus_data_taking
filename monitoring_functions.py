@@ -16,6 +16,7 @@ def monitor_experiment():
     log_outside_can_temp()
     log_hall_sensors()
     log_resistor_dewar_bottom()
+    log_LHe_level()
     #Add other parts as other parts become functional. Currently thinking of:
     #  1) magnet supply current
     #  2) log outside can bottom temperature
