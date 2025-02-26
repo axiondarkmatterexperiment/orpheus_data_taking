@@ -304,6 +304,10 @@ def log_LHe_level():
     IP_ADDRESS="192.168.25.13"
     PORT=4266 #The one that Raphael used. I tried a few other values and got the error that "the target machine actively refused" the connection
     TIMEOUT=5 #This was the value Raphael used
+    SCPI_string = "*OPC?\n" #Check connection
+    print(query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string))
+
+    
     SCPI_string = "MEAS?\n"
     
     sensor_length_cm = 120
