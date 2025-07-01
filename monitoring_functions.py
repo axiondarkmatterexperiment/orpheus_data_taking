@@ -16,7 +16,7 @@ def monitor_experiment():
     log_outside_can_temp()
     log_hall_sensors()
     log_resistor_dewar_bottom()
-    log_LHe_level()
+    #log_LHe_level()
     #Add other parts as other parts become functional. Currently thinking of:
     #  1) magnet supply current
     #  2) log outside can bottom temperature
@@ -303,9 +303,9 @@ def log_LHe_level():
     #Send the query to the LHe level sensor
     IP_ADDRESS="192.168.25.13"
     PORT=4266 #The one that Raphael used. I tried a few other values and got the error that "the target machine actively refused" the connection
-    TIMEOUT=5 #This was the value Raphael used
-    SCPI_string = "*OPC?\n" #Check connection
-    print(query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string))
+    TIMEOUT=3 #This was the value Raphael used
+    #SCPI_string = "*OPC?\n" #Check connection
+    #print(query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string))
 
     
     SCPI_string = "MEAS?\n"

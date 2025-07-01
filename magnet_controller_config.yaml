@@ -2,6 +2,6 @@ prologix_ip: "192.168.25.15"
 power_supply_gpib_address: 0
 voltmeter_gpib_address: 22
 current_resistor_calibration_ohms: 250.0e-6
-pid_p_parameter: 0.12
-pid_i_parameter: 0.002
+pid_p_parameter: 0.02
+pid_i_parameter: 0.01
 pid_d_parameter: -0.00

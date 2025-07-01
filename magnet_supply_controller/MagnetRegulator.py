@@ -40,7 +40,7 @@ class MagnetRegulator:
         ki=config["pid_i_parameter"]
         kd=config["pid_d_parameter"]
         self.pid = PID(kp, ki, kd, setpoint=0)
-        self.pid.output_limits=(0,2.0) #IMPORTANT
+        self.pid.output_limits=(0,0.7) #IMPORTANT
         self.pid.sample_time=0.2 #pid has its own timing
         self.pid_lock= threading.Lock()
         self.pid_enabled=True
