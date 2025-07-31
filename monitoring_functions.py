@@ -322,6 +322,17 @@ def log_LHe_level():
 
     log_sensor(sensor_name, timestamp, val_raw, val_cal)
 
+def transmission_scan(f_center, f_span, na_power=-10, n_avgs=10, if_bw = 1e4):
+    update_current_task('transmission scan')
+    #send the query to the VNA:
+    IP_ADDRESS="192.168.25.7"
+    PORT=5025
+    TIMEOUT=10 #This might need to be changed dependent on the averaging time
+
+    SCPI_string = "*IDN?\n"
+    
+    print(query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)[1])
+
 def query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string):
     # update_current_task('sending SCPI Query:',SCPI_string) #This might just be annoying
     #Establish connection via the socket
