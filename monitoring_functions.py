@@ -322,17 +322,77 @@ def log_LHe_level():
 
     log_sensor(sensor_name, timestamp, val_raw, val_cal)
 
-def transmission_scan(f_center, f_span, na_power=-10, n_avgs=10, if_bw = 1e4):
+#Switches for the RF path are controlled by the Keithley power supply.
+#The power supply has two channels. The switch settings are:
+#   TRANSMISSION: CH1=OFF, CH2=OFF
+#   REFLECTION: CH1=ON, CH2=OFF
+#   DIGITIZATION: CH1=OFF, CH2=ON
+def switch_rf(setting): #setting values: "transmission", "reflection", "digitizer"
+    IP_ADDRESS="192.158.25.9"
+    PORT="1234"
+    TIMEOUT=3
+
+    if setting == "transmission":
+        SCPI_string = "INST:SEL CH1\n"
+        write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+        query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "*OPC?\n")
+        SCPI_string = "SOUR:OUTP:ENAB 0"
+        write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+        query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "*OPC?\n")
+        
+        SCPI_string = "INST:SEL CH2\n"
+        write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+        query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "*OPC?\n")
+        SCPI_string = "SOUR:OUTP:ENAB 0"
+        write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+        query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "*OPC?\n")
+
+
+
+def scan_na(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4):
     update_current_task('transmission scan')
     #send the query to the VNA:
     IP_ADDRESS="192.168.25.7"
     PORT=5025
     TIMEOUT=10 #This might need to be changed dependent on the averaging time
 
-    SCPI_string = "INIT1:CONT?\n"
-    print(query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)[1])
-    SCPI_string = "TRIG:SOUR BUS?\n"
-    print(query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)[1])
+    #Sweep setup
+    SCPI_string = "SENS1:FREQ:CENT " + str(f_center_GHz*1e9) + "\n"
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    SCPI_string = "SENS1:FREQ:SPAN " + str(f_span_GHz*1e9) + "\n"
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    SCPI_string = "SOUR:POW " + str(na_power) + "\n"
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+
+    #Averaging
+    SCPI_string = "SENS1:AVER:COUNT " + str(n_avgs) + "\n"
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    SCPI_string = "TRIG:AVER ON\n" #triggers the measurement
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    SCPI_string = "SENS1:BAND " + str(if_bw_Hz) + "\n" #triggers the measurement
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    
+    #Triggering
+    SCPI_string = "INIT1\n" #sets trigger to single
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    SCPI_string = "TRIG:SOUR BUS\n" #sets trigger source to bus
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    SCPI_string = "TRIG\n" #triggers the measurement
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    
+    #Wait for measurement to finish
+    SCPI_string = "*OPC?\n" #triggers the measurement
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    
+    #Take scan data
+    SCPI_string = "CALC1:DATA:SDAT?\n" #ask for the IQ data. Format: n*2-1 is real, n*2 is imaginary
+    timestamp, iq_raw = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    SCPI_string = "SENS1:FREQ:DATA?\n" #ask for the frequency vector
+    timestamp, f_raw = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+
+    
+
+    return f_raw, iq_raw 
 
 def query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string):
     # update_current_task('sending SCPI Query:',SCPI_string) #This might just be annoying
@@ -371,3 +431,4 @@ def write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string):
     # Send encoded message and record time of the measurement
     socket_connection.sendall(SCPI_string.encode())
     return
+
