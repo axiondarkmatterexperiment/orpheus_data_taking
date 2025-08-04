@@ -328,26 +328,62 @@ def log_LHe_level():
 #   REFLECTION: CH1=ON, CH2=OFF
 #   DIGITIZATION: CH1=OFF, CH2=ON
 def switch_rf(setting): #setting values: "transmission", "reflection", "digitizer"
-    IP_ADDRESS="192.158.25.9"
-    PORT="1234"
+    IP_ADDRESS="192.168.25.9"
+    PORT=1234
     TIMEOUT=3
 
     if setting == "transmission":
-        SCPI_string = "INST:SEL CH1\n"
-        write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-        query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "*OPC?\n")
-        SCPI_string = "SOUR:OUTP:ENAB 0"
-        write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-        query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "*OPC?\n")
-        
-        SCPI_string = "INST:SEL CH2\n"
-        write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-        query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "*OPC?\n")
-        SCPI_string = "SOUR:OUTP:ENAB 0"
-        write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-        query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "*OPC?\n")
+        ch1="0"
+        ch2="0"
+    elif setting == "reflection":
+        ch1="0"
+        ch2="1"
+    elif setting == "digitization":
+        ch1="1"
+        ch2="0"
+    else:
+        print("not doing anything. make sure the setting is either transmission, reflection, or digitization.")
+        return
+   
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "INST:SEL CH1\n")
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "*OPC?\n")
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "SOUR:OUTP:ENAB 1\n")
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "*OPC?\n")
+    SCPI_string = "SOUR:CHAN:OUTP:STAT " + ch1 + "\n"
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "*OPC?\n")
+    
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "INST:SEL CH2\n")
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "*OPC?\n")
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "SOUR:OUTP:ENAB 1\n")
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "*OPC?\n")
+    SCPI_string = "SOUR:CHAN:OUTP:STAT " + ch2 + "\n"
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "*OPC?\n")
+
+    return
 
 
+def check_switch(): 
+    IP_ADDRESS="192.168.25.9"
+    PORT=1234
+    TIMEOUT=3
+
+    print(query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "SOUR:OUTP:STAT?\n"))
+
+
+    if setting == "transmission":
+        print("switch set to transmission measurements")
+    elif setting == "reflection":
+        print("switch set to reflection measurements")
+    elif setting == "digitization":
+        print("switch set to digitization")
+    else:
+        print("not doing anything. make sure the setting is either transmission, reflection, or digitization.")
+        return
+   
+    
+    return
 
 def scan_na(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4):
     update_current_task('transmission scan')
@@ -420,15 +456,17 @@ def query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string):
 
 #This is for sending SCPI commands which you don't expect any response for. (Using query_SCPI for said commands causes a timeout error).
 #NOTE: that this only TRIES to write your command. It doesn't check if it actually worked. To check if it worked you can use query_SCPI.
-def write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string):
-    
+def write_SCPI(IP_ADDRESS, PORT, SNAP_TIME, SCPI_string):
+    timeout_delta = datetime.timedelta(seconds=SNAP_TIME)
+
     # update_current_task('sending SCPI Query:',SCPI_string) #This might just be annoying
     #Establish connection via the socket
     socket_connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    socket_connection.settimeout(TIMEOUT)
     socket_connection.connect((IP_ADDRESS, PORT))
-
+    
     # Send encoded message and record time of the measurement
     socket_connection.sendall(SCPI_string.encode())
-    return
+    OPC_command = "*OPC?\n"
+    socket_connection.sendall(OPC_command.encode())
 
+    return
