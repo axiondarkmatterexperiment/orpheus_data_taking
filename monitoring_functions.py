@@ -346,20 +346,12 @@ def switch_rf(setting): #setting values: "transmission", "reflection", "digitize
         return
    
     write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "INST:SEL CH1\n")
-    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "*OPC?\n")
     write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "SOUR:OUTP:ENAB 1\n")
-    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "*OPC?\n")
-    SCPI_string = "SOUR:CHAN:OUTP:STAT " + ch1 + "\n"
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "*OPC?\n")
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "SOUR:CHAN:OUTP:STAT " + ch1 + "\n")
     
     write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "INST:SEL CH2\n")
-    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "*OPC?\n")
     write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "SOUR:OUTP:ENAB 1\n")
-    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "*OPC?\n")
-    SCPI_string = "SOUR:CHAN:OUTP:STAT " + ch2 + "\n"
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "*OPC?\n")
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT,"SOUR:CHAN:OUTP:STAT " + ch2 + "\n")
 
     return
 
@@ -466,6 +458,7 @@ def write_SCPI(IP_ADDRESS, PORT, SNAP_TIME, SCPI_string):
     
     # Send encoded message and record time of the measurement
     socket_connection.sendall(SCPI_string.encode())
+    #The *OPC? command is a universal SCPI command that tells the instrument BUS to wait until the last-sent command has been executed. Might not work for a GPIB with multiple connections.
     OPC_command = "*OPC?\n"
     socket_connection.sendall(OPC_command.encode())
 
