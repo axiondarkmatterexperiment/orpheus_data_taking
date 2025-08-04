@@ -356,27 +356,6 @@ def switch_rf(setting): #setting values: "transmission", "reflection", "digitize
     return
 
 
-def check_switch(): 
-    IP_ADDRESS="192.168.25.9"
-    PORT=1234
-    TIMEOUT=3
-
-    print(query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "SOUR:OUTP:STAT?\n"))
-
-
-    if setting == "transmission":
-        print("switch set to transmission measurements")
-    elif setting == "reflection":
-        print("switch set to reflection measurements")
-    elif setting == "digitization":
-        print("switch set to digitization")
-    else:
-        print("not doing anything. make sure the setting is either transmission, reflection, or digitization.")
-        return
-   
-    
-    return
-
 def scan_na(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4):
     update_current_task('transmission scan')
     #send the query to the VNA:
