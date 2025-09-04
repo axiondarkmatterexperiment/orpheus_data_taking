@@ -49,6 +49,14 @@ def establish_databases():
                 );
                 """)
     
+    cur.execute("""CREATE TABLE IF NOT EXISTS public.na_scans (
+                scan_type TEXT,
+                "timestamp" TIMESTAMPTZ,
+                freqs REAL,
+                iq_data REAL
+                );
+                """)
+
     cur.execute("DROP TABLE IF EXISTS current_task;")
 
     cur.execute("""CREATE TABLE public.current_task (
@@ -115,6 +123,27 @@ def log_error(timestamp, error_message):
     
     cur.close()
     conn.close()
+
+def log_na_scan(scan_type, timestamp, freqs, iq_data):
+    ''' 
+    Set up connection to the psql database
+    '''
+
+    # define the connection to the postgres database
+    # conn = psycopg2.connect(host='192.168.25.2', dbname='postgres', user='admx_master', password='wimpssuck', port=5432)
+    conn = psycopg2.connect(host='192.168.25.2', dbname='orpheus_db', user='postgres', password='axionsrock', port=5432)
+
+    #I think this is just what we use to send commands directly to the postgres command line
+    cur = conn.cursor()
+
+    cur.execute("INSERT INTO na_scans (scan_type, timestamp, freqs, iq_data) VALUES (%s, %s, %s, %s)",
+                (scan_type, timestamp, freqs, iq_data))
+    
+    conn.commit()
+    
+    cur.close()
+    conn.close()
+    
 
 def log_sensor(sensor_name, timestamp, val_raw, val_cal ):
     ''' 
@@ -357,7 +386,6 @@ def switch_rf(setting): #setting values: "transmission", "reflection", "digitize
 
 
 def scan_na(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4):
-    update_current_task('transmission scan')
     #send the query to the VNA:
     IP_ADDRESS="192.168.25.7"
     PORT=5025
@@ -400,6 +428,18 @@ def scan_na(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4):
     
 
     return f_raw, iq_raw 
+
+def log_transmission_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4):
+    switch_rf("transmission")
+    timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
+    f, iq = na_scan(f_center_GHz, f_span_GHz, na_power, n_avgs, if_bw_Hz) 
+    log_na_scan("transmission", timestamp, f, iq)
+    
+def log_reflection_scan((f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4):
+    switch_rf("reflection")
+    timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
+    f, iq = na_scan(f_center_GHz, f_span_GHz, na_power, n_avgs, if_bw_Hz) 
+    log_na_scan("reflection", timestamp, f, iq)
 
 def query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string):
     # update_current_task('sending SCPI Query:',SCPI_string) #This might just be annoying
