@@ -150,31 +150,26 @@ def log_transmission_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_
         log_cavity_params("C_err_trans",timestamp, float(perr[3]))
         
         return popt[0], popt[1]
-        #except:
-        #    return                
-    
 
 def log_reflection_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4, fitting=True):
     switch_rf("reflection")
     timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
     f, iq = scan_na(f_center_GHz, f_span_GHz, na_power, n_avgs, if_bw_Hz) 
     log_na_scan("reflection", timestamp, f, iq)
-    
     if fitting:
         re, im = iq[::2], iq[1::2]    
-        p = re**2 + im**2
-        try:
-            popt, pcov = data_lorentzian_fit(p,f,'reflection')
-            perr = np.sqrt(np.diag(pcov))
-            log_cavity_params("f0_refl",timestamp, popt[0])
-            log_cavity_params("Q_refl",timestamp, popt[1])
-            log_cavity_params("dy_refl",timestamp, popt[2])
-            log_cavity_params("C_refl",timestamp, popt[3])
-                    
-            log_cavity_params("f0_err_refl",timestamp, perr[0])
-            log_cavity_params("Q_err_refl",timestamp, perr[1])
-            log_cavity_params("dy_err_refl",timestamp, perr[2])
-            log_cavity_params("C_err_refl",timestamp, perr[3])
-        except:
-            return                
-    return popt[0], popt[1]
+        p = np.square(re) + np.square(im)
+        #try:
+        popt, pcov = data_lorentzian_fit(p,f,'reflection')
+        perr = np.sqrt(np.diag(pcov))
+        log_cavity_params("f0_trans",timestamp, float(popt[0]))
+        log_cavity_params("Q_trans",timestamp, float(popt[1]))
+        log_cavity_params("dy_trans",timestamp, float(popt[2]))
+        log_cavity_params("C_trans",timestamp, float(popt[3]))
+         
+        log_cavity_params("f0_err_trans",timestamp, float(perr[0]))
+        log_cavity_params("Q_err_trans",timestamp, float(perr[1]))
+        log_cavity_params("dy_err_trans",timestamp, float(perr[2]))
+        log_cavity_params("C_err_trans",timestamp, float(perr[3]))
+        
+        return popt[0], popt[1]
