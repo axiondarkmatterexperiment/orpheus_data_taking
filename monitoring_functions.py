@@ -3,6 +3,8 @@
 import sys
 import os
 
+import numpy as np
+
 sys.path.insert(0, 'magnet_supply_controller')
 import psycopg2
 import socket
@@ -11,15 +13,13 @@ import pytz
 #                                 side A temp, side B temp, hall 1, hall 2,  hall 3,   hall 4,  outside of can temp sensor
 from calibration_functions import SN_U04844, SN_X201099, SN_68179, SN_68253, SN_64753, SN_67247, PT_100
 
-def monitor_experiment():
+def log_sensors():
     log_magnet_temps()
     log_outside_can_temp()
-    log_hall_sensors()
     log_resistor_dewar_bottom()
-    #log_LHe_level()
-    #Add other parts as other parts become functional. Currently thinking of:
-    #  1) magnet supply current
-    #  2) log outside can bottom temperature
+    log_LHe_level()
+    log_hall_sensors() #I would like to keep all four hall sensors. Two on the top and two on the bottom. This is to test error in sensor values which the magnet test indicated.
+                        # So I will need to have pairs of sensors at the same location, and pair the axial hall sensors with the rectangular ones.
 
 def establish_databases():
     ''' 
@@ -38,6 +38,13 @@ def establish_databases():
                 type TEXT,
                 task TEXT,
                 message TEXT
+                );
+                """)
+    
+    cur.execute("""CREATE TABLE IF NOT EXISTS public.cavity_params (
+                param_name TEXT,
+                "timestamp" TIMESTAMPTZ,
+                val REAL
                 );
                 """)
     
@@ -425,21 +432,11 @@ def scan_na(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4):
     SCPI_string = "SENS1:FREQ:DATA?\n" #ask for the frequency vector
     timestamp, f_raw = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
 
-    
+    f_raw = np.fromstring(f_raw, dtype=np.float64, sep=',').tolist()
+    iq_raw = np.fromstring(iq_raw, dtype=np.float64, sep=',').tolist()
+
 
     return f_raw, iq_raw 
-
-def log_transmission_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4):
-    switch_rf("transmission")
-    timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
-    f, iq = na_scan(f_center_GHz, f_span_GHz, na_power, n_avgs, if_bw_Hz) 
-    log_na_scan("transmission", timestamp, f, iq)
-    
-def log_reflection_scan((f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4):
-    switch_rf("reflection")
-    timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
-    f, iq = na_scan(f_center_GHz, f_span_GHz, na_power, n_avgs, if_bw_Hz) 
-    log_na_scan("reflection", timestamp, f, iq)
 
 def query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string):
     # update_current_task('sending SCPI Query:',SCPI_string) #This might just be annoying
