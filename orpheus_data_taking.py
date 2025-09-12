@@ -1,3 +1,13 @@
+##########################################################################################################
+###                                                                                                    ###
+### This script runs the Orpheus data taking and sets up an interactive and self-updating GUI          ###
+### that reports the status of the experiment to a remote or local operator. You do not need           ###
+### to SSH into the orpheus computer to run it, but you need to be connected to the CENPA network      ###
+### either through ethernet or VPN.  -Jimmy                                                            ###
+###                                                                                                    ###
+##########################################################################################################
+
+
 from blessed import Terminal
 from OrpheusGUI import OrpheusGUI#, CommandBrain
 from OrpheusOperator import OrpheusOperator
