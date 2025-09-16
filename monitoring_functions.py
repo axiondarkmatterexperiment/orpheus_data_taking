@@ -48,7 +48,7 @@ def establish_databases():
                 );
                 """)
     
-    cur.execute("""CREATE TABLE IF NOT EXISTS public.magnet_monitoring (
+    cur.execute("""CREATE TABLE IF NOT EXISTS public.experiment_monitoring(
                 sensor_name TEXT,
                 "timestamp" TIMESTAMPTZ,
                 val_raw REAL,
@@ -164,7 +164,7 @@ def log_sensor(sensor_name, timestamp, val_raw, val_cal ):
     #I think this is just what we use to send commands directly to the postgres command line
     cur = conn.cursor()
 
-    cur.execute("INSERT INTO magnet_monitoring (sensor_name, timestamp, val_raw, val_cal) VALUES (%s, %s, %s, %s)",
+    cur.execute("INSERT INTO experiment_monitoring(sensor_name, timestamp, val_raw, val_cal) VALUES (%s, %s, %s, %s)",
                 (sensor_name, timestamp, val_raw, val_cal))
     
     conn.commit()

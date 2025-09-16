@@ -64,10 +64,13 @@ def take_data(name):
         try:
             GUI.na_fc_tile.set_value(float(Operator.na_fc))
             GUI.na_span_tile.set_value(float(Operator.na_span))
-            GUI.message_tile.text="now waiting three seconds..."
             GUI.update_ui(term)
-            time.sleep(3)
             f0,Q = log_transmission_scan(np.float64(Operator.na_fc), np.float64(Operator.na_span))
+            #Q_width = f0/Q
+            #Operator.na_span = str(Q_width*Operator.na_Q_widths)
+            Operator.na_fc = str(f0/1e9)
+            f0_refl,Q_refl,beta = log_reflection_scan(np.float64(Operator.na_fc), np.float64(Operator.na_span))
+            GUI.beta_tile.set_value(beta)
             GUI.Q_tile.set_value(Q)
             GUI.f0_tile.set_value(f0/1e9)
             GUI.message_tile.text="scan:"+str(timestamp)
@@ -102,7 +105,5 @@ thread2 = threading.Thread(target=take_data, args=("data_taker",))
 #thread3 = threading.Thread(target=take_data, args=("sensor_monitor",))
 
 thread1.start()
-log_transmission_scan(16.35,0.04)
-time.sleep(6)
 thread2.start()
 #thread3.start()

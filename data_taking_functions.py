@@ -13,7 +13,7 @@ import pytz
 #                                 side A temp, side B temp, hall 1, hall 2,  hall 3,   hall 4,  outside of can temp sensor
 from calibration_functions import SN_U04844, SN_X201099, SN_68179, SN_68253, SN_64753, SN_67247, PT_100
 from monitoring_functions import query_SCPI, write_SCPI
-from fitting_functions import data_lorentzian_fit
+from fitting_functions import data_lorentzian_fit, deconvolve_phase, calculate_coupling
 
 def log_cavity_params(param_name, timestamp, val):
     ''' 
@@ -157,19 +157,23 @@ def log_reflection_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw
     f, iq = scan_na(f_center_GHz, f_span_GHz, na_power, n_avgs, if_bw_Hz) 
     log_na_scan("reflection", timestamp, f, iq)
     if fitting:
-        re, im = iq[::2], iq[1::2]    
+        re, im = iq[::2], iq[1::2]
         p = np.square(re) + np.square(im)
         #try:
         popt, pcov = data_lorentzian_fit(p,f,'reflection')
         perr = np.sqrt(np.diag(pcov))
-        log_cavity_params("f0_trans",timestamp, float(popt[0]))
-        log_cavity_params("Q_trans",timestamp, float(popt[1]))
-        log_cavity_params("dy_trans",timestamp, float(popt[2]))
-        log_cavity_params("C_trans",timestamp, float(popt[3]))
+        log_cavity_params("f0_refl",timestamp, float(popt[0]))
+        log_cavity_params("Q_refl",timestamp, float(popt[1]))
+        log_cavity_params("dy_refl",timestamp, float(popt[2]))
+        log_cavity_params("C_refl",timestamp, float(popt[3]))
          
-        log_cavity_params("f0_err_trans",timestamp, float(perr[0]))
-        log_cavity_params("Q_err_trans",timestamp, float(perr[1]))
-        log_cavity_params("dy_err_trans",timestamp, float(perr[2]))
-        log_cavity_params("C_err_trans",timestamp, float(perr[3]))
-        
-        return popt[0], popt[1]
+        log_cavity_params("f0_err_refl",timestamp, float(perr[0]))
+        log_cavity_params("Q_err_refl",timestamp, float(perr[1]))
+        log_cavity_params("dy_err_refl",timestamp, float(perr[2]))
+        log_cavity_params("C_err_refl",timestamp, float(perr[3]))
+       
+        phase = np.unwrap(np.angle(np.asarray(re)+1j*np.asarray(im)))
+        cavity_phase = deconvolve_phase(f, phase)
+        beta = calculate_coupling(popt[2]/popt[3],cavity_phase) 
+
+        return popt[0], popt[1], beta
