@@ -1,8 +1,6 @@
 #Function for motor commands
 import socket
 
-steps_per_second = 
-
 BDP_IP = "192.168.25.3"
 TDP_IP = "192.168.25.4"
 CM_IP = "192.168.25.5"
