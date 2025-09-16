@@ -38,7 +38,7 @@ def motor_command(IP, command_str):
         #print(f"Error communicating with motor: {err}")
         return "SOCKET ERROR"
     finally:
-        s.close()
+        sock.close()
 
 def move_motor(motor_name, num_steps):
     IP = select_motor(motor_name)
