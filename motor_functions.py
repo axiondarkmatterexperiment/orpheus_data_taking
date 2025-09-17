@@ -6,6 +6,10 @@ TDP_IP = "192.168.25.4"
 CM_IP = "192.168.25.5"
 port = 7776
 
+#physical parameters:
+steps_per_cm = 20000#This is incorrect
+
+
 def select_motor(motor_name):
     if motor_name == "bottom_dielectric_plate":
         IP=BDP_IP
@@ -19,26 +23,52 @@ def select_motor(motor_name):
     return IP 
 
 #Add error handling?
-def motor_command(IP, command_str):
+def motor_command(IP,command):
+    """Sends a single SCL command and waits for a response."""
     try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.settimeout(5)
-        sock.connect((IP, port))
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(2)  # Set a timeout for the connection
+        s.connect((IP,port))
+
+        # SCL commands must be sent as bytes and end with a carriage return
         header = bytes(([0x00, 0x07]))
         end = bytes([0xD])
 
-        encodeMessage = command_str.encode()
-        Send = header + encodeMessage + end
-        sock.sendto(Send,(IP,port))
+        send_encoded = header + command.encode() + end
+        s.sendto(send_encoded,(IP,port))
+        #s.sendall(command.encode() + b'\r')
 
-        response = sock.recv(2048)
-        #print(f"Motor response: {response.decode('ascii').strip()}")
+        # Read and print the motor's response
+        response = s.recv(2048)
         return response.decode('ascii').strip()
+        print(f"Motor response: {response.decode('ascii').strip()}")
+
     except socket.error as err:
-        #print(f"Error communicating with motor: {err}")
-        return "SOCKET ERROR"
+        print(f"Error communicating with motor: {err}")
     finally:
-        sock.close()
+        s.close()#    try:
+#        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+#        sock.settimeout(5)
+#        sock.connect((IP, port))
+#
+#        header = bytes(([0x00, 0x07]))
+#        end = bytes([0xD])
+#
+#        encodeMessage = command_str.encode()
+#        Send = header + encodeMessage + end
+#        sock.sendto(Send,(IP,port))
+#
+#        response = sock.recv(2048)
+#        #print(f"Motor response: {response.decode('ascii').strip()}")
+#        return response.decode('ascii').strip()
+#    except socket.error as err:
+#        #print(f"Error communicating with motor: {err}")
+#        return "SOCKET ERROR"
+#    finally:
+#        sock.close()
+
+def coordinated_motion(dl_cm):#dl_cm is the change in cavity length in cm
+    
 
 def move_motor(motor_name, num_steps):
     IP = select_motor(motor_name)
@@ -49,10 +79,18 @@ def move_motor(motor_name, num_steps):
     f = True
     while f:
         steps = motor_command(IP, "SP")
+        steps = steps[2:]#Cuts out the '\x00\x07' at the start of the message
         if steps == "*":
             f = True
         else:
-            f = False
+            steps=steps[3:]#Cuts out the 'SP=' at the start of the message
+            #try exception because before the motion is complete it returns ?6 instead of step number for a few loops.
+            try:
+                steps = int(steps)
+                print("Motion completed. Total steps = " + str(steps))
+                f = False
+            except ValueError:
+                f = True
     return steps
 
 def reset_motor_suddenly(motor_name):
