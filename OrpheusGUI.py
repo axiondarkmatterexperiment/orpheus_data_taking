@@ -7,28 +7,47 @@ class OrpheusGUI:
     def __init__(self):
         Operator=OrpheusOperator()
         #Commands catalogue:
-        self.catalogue_tile=ListTile(["na_power_trans,<>: (dBm)", "na_power_refl,<>: (dBm)", "na_fc,<>: (GHz)", "na_span,<>: (GHz)"],title="Command Catalogue",rect=(0,0,80,0))
+        self.catalogue_tile = ListTile(["na_power_trans,<>: (dBm)", "na_power_refl,<>: (dBm)", "na_fc,<>: (GHz)", "na_span,<>: (GHz)",
+                                        "transmission_period,<>: ()","reflection_period,<>: ()","tuning_period,<>: ()"],title="Command Catalogue",rect=(0,0,100,0))
         
         #input tile and message tile (on the bottom of the GUI):
-        self.input_tile=TextEntryTile("",(0,0,20,4),title="command input:")
-        self.message_tile=TextTile("",(0,0,60,4),title="Message")	
+        self.input_tile = TextEntryTile("",(0,0,35,4),title="command input:")
+        self.message_tile = TextTile("",(0,0,65,4),title="Message")	
         
         #values display:
-        self.na_power_tile=ValueTile(float(Operator.na_power),(0,0,27,4),title="NA Power", units="dBm")
-        self.na_fc_tile=ValueTile(float(Operator.na_fc)/1e9,(0,0,27,4),title="NA fc", units="GHz")
-        self.na_span_tile=ValueTile(float(Operator.na_span)/1e9,(0,0,26,4),title="NA span", units="GHz")
-        self.f0_tile=ValueTile(0,(0,0,27,4),title="f0_trans", units="GHz")
-        self.Q_tile=ValueTile(0,(0,0,27,4),title="Q_trans")
-        self.beta_tile=ValueTile(0,(0,0,26,4),title="beta")
+        self.na_power_tile = ValueTile(float(Operator.na_power),(0,0,33,4),title="NA Power", units="dBm")
+        self.na_fc_tile = ValueTile(float(Operator.na_fc)/1e9,(0,0,33,4),title="NA fc", units="GHz")
+        self.na_span_tile = ValueTile(float(Operator.na_span)/1e9,(0,0,34,4),title="NA span", units="GHz")
+        self.f0_tile = ValueTile(0,(0,0,33,4),title="f0_trans", units="GHz")
+        self.Q_tile = ValueTile(0,(0,0,33,4),title="Q_trans")
+        self.beta_tile = ValueTile(0,(0,0,34,4),title="beta")
+
+        self.cavity_length_tile = ValueTile(0,(0,0,33,4),title="cavity_length", units="cm")
+        self.dl_cm_tile = ValueTile(0,(0,0,33,4),title="dl_cm",units="cm")
          
-        self.ui=VStackTile((0,0,80,52),[HStackTile((0,0,80,24),[self.catalogue_tile]),
-                        HStackTile((0,0,80,4),[self.na_power_tile,
+        #Data taking period tiles:
+        self.transmission_period_tile = ValueTile(Operator.transmission_period,(0,0,20,4),title="trans period")
+        self.reflection_period_tile = ValueTile(Operator.reflection_period,(0,0,20,4),title="refl period")
+        self.digitization_period_tile = ValueTile(Operator.digitization_period,(0,0,20,4),title="digit period")
+        self.tuning_period_tile = ValueTile(Operator.tuning_period,(0,0,20,4),title="tuning period")
+        self.widescan_period_tile = ValueTile(Operator.widescan_period,(0,0,20,4),title="widescan period")
+
+        self.ui=VStackTile((0,0,100,52),[HStackTile((0,0,100,24),[self.catalogue_tile]),
+                        HStackTile((0,0,100,4),[self.na_power_tile,
                                 self.na_fc_tile,
                 	       	    self.na_span_tile]),
-                        HStackTile((0,0,80,4),[self.f0_tile,
+                        HStackTile((0,0,100,4),[self.f0_tile,
                                 self.Q_tile,
                 	       	    self.beta_tile]),
-                        HStackTile((0,0,80,4),[self.input_tile,
+                        HStackTile((0,0,100,4),[self.cavity_length_tile,
+                                self.dl_cm_tile,
+                	       	    self.beta_tile]),
+                        HStackTile((0,0,100,4),[self.transmission_period_tile,
+                                self.reflection_period_tile,
+                	       	    self.digitization_period_tile,
+                                self.tuning_period_tile,
+                                self.widescan_period_tile]),
+                        HStackTile((0,0,100,4),[self.input_tile,
                                 self.message_tile])])#,
         
 
@@ -55,30 +74,3 @@ class OrpheusGUI:
         #If an item in the catalogue has been selected, update the DAQ variable, which is always a string
         if np.size(cat_idx)>0:
             exec("Operator."+entity_str+"="+val_str)
-
-#if __name__=="__main__":
-#    silly_timer=0
-#    term=Terminal()
-#    display=MagnetDisplay()
-#    with term.fullscreen(), term.cbreak(), term.hidden_cursor():
-#        while True:
-#            silly_timer+=1
-#            display.set_voltage(math.sin(silly_timer/20))
-#            display.set_measured_current(50*(1.0+math.sin(silly_timer/100)))
-#            display.set_pid(random.gauss(mu=0,sigma=0.1),random.gauss(mu=0,sigma=0.1),random.gauss(mu=0,sigma=0.1))
-#
-#            val = term.inkey(timeout=0.1)
-#            if val:
-#                if val.name=="KEY_ENTER":
-#                    input_text=display.input_tile.text
-#                    display.input_tile.text=""
-#                    if input_text=="quit":
-#                        break
-#                    try:
-#                        set_current=float(input_text)
-#                        display.set_set_current(set_current)
-#                    except ValueError:
-#                        display.message_tile.text="Invalid input"
-#                display.input_tile.handle_key(val)
-#            display.update_ui(term)
-#    term.exit_fullscreen()
