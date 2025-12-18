@@ -9,7 +9,8 @@ class OrpheusGUI:
         #Commands catalogue:
         self.catalogue_tile = ListTile(["na_power_trans,<>: (dBm)", "na_power_refl,<>: (dBm)", "na_fc,<>: (GHz)", "na_span,<>: (GHz)",
                                         "transmission_period,<>: ()","reflection_period,<>: ()","tuning_period,<>: ()"],title="Command Catalogue",rect=(0,0,100,0))
-        
+       
+        self.tuning_mode_tile = TextTile("tuning forward",(0,0,35,0),title="tuning mode") 
         #input tile and message tile (on the bottom of the GUI):
         self.input_tile = TextEntryTile("",(0,0,35,4),title="command input:")
         self.message_tile = TextTile("",(0,0,65,4),title="Message")	
