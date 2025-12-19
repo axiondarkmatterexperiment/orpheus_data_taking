@@ -36,6 +36,7 @@ def take_data(name):
     #Count the loops to have differing periods for different actions
     tuning_index = 0 #for indexing through the list of cavity lengths, back and forth
     loop_counter = 1
+    tune_forward = True
     Operator.cavity_length = current_cavity_l
     
     while True:
@@ -77,17 +78,27 @@ def take_data(name):
                 try:
                     GUI.message_tile.text="starting tuning operation " + str(Operator.dl_cm)
                     l_cm = Operator.cavity_length
-                    dl_cm = l_cm - cavity_lengths_array[loop_counter]
+                    dl_cm = l_cm - cavity_lengths_array[tuning_index]
                     time.sleep(1)
                     GUI.update_ui(term)
                     coordinated_motion(Operator.dl_cm)
-                    tuning_index = tuning_index + 1
                     Operator.cavity_length = Operator.cavity_length + dl_cm
                     GUI.cavity_length_tile.set_value(Operator.cavity_length)
                     GUI.message_tile.text="done with tuning operation"
                     GUI.update_ui(term)
                     with open('cavity_current_length.txt','w') as output:
                         output.write(str(Operator.cavity_length))
+                    #Determine the direction of tuning. The data taking is set up to scan and re-scan back and forth through the array of cavity lengths.
+                    if tune_forward:
+                        tuning_index = tuning_index + 1
+                    else:
+                        tuning_index = tuning_index - 1
+                    if tuning_index == 0:
+                        tune_forward = True
+                        GUI.tuning_mode_tile.text="Tuning Forward"
+                    if tuning_index == len(cavity_lengths_array)-1:
+                        tune_forward = False
+                        GUI.tuning_mode_tile.text="Tuning Backward"
                     time.sleep(3)
                 except:
                     GUI.message_tile.text= "error during tuning"
