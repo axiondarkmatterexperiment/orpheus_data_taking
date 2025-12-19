@@ -23,6 +23,10 @@ import numpy as np
 import TextUI
 import threading
 
+current_cavity_l = float(np.genfromtxt('cavity_current_length.txt',delimiter=','))
+cavity_l_array = np.genfromtxt('cavity_lengths_array.csv',delimiter=',')
+
+
 term = Terminal()
 GUI=OrpheusGUI()
 Operator=OrpheusOperator()
@@ -30,7 +34,9 @@ Operator=OrpheusOperator()
 #This is to run the full data taking cadence, which is separate from logging the sensor values
 def take_data(name):
     #Count the loops to have differing periods for different actions
+    tuning_index = 0 #for indexing through the list of cavity lengths, back and forth
     loop_counter = 1
+    Operator.cavity_length = current_cavity_l
     
     while True:
         #Transmission Scan:
@@ -70,13 +76,18 @@ def take_data(name):
             if loop_counter % Operator.tuning_period == 0:
                 try:
                     GUI.message_tile.text="starting tuning operation " + str(Operator.dl_cm)
+                    l_cm = Operator.cavity_length
+                    dl_cm = l_cm - cavity_lengths_array[loop_counter]
                     time.sleep(1)
                     GUI.update_ui(term)
                     coordinated_motion(Operator.dl_cm)
-                    Operator.cavity_length = Operator.cavity_length + Operator.dl_cm
+                    tuning_index = tuning_index + 1
+                    Operator.cavity_length = Operator.cavity_length + dl_cm
                     GUI.cavity_length_tile.set_value(Operator.cavity_length)
                     GUI.message_tile.text="done with tuning operation"
                     GUI.update_ui(term)
+                    with open('cavity_current_length.txt','w') as output:
+                        output.write(str(Operator.cavity_length))
                     time.sleep(3)
                 except:
                     GUI.message_tile.text= "error during tuning"
