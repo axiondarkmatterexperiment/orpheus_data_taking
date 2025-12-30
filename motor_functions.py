@@ -79,7 +79,22 @@ def coordinated_motion(dl_cm):#dl_cm is the change in cavity length in cm
     CM_steps = wait_for_motor("curved_mirror")
 
     return BDP_steps, TDP_steps, CM_steps
-    
+   
+def move_motor_cm(motor_name, move_cm):
+    if motor_name == "bottom_dielectric_plate" or motor_name == "BDP":
+        motor_IP = BDP_IP
+    elif motor_name == "top_dielectric_plate" or motor_name == "TDP":
+        motor_IP = TDP_IP
+    elif motor_name == "curved_mirror" or motor_name == "CM":
+        motor_IP = CM_IP
+    else:
+        print("invalid motor name. Choose either bottom_dielectric_plate, top_dielectric_plate, or curved_mirror, or the initials of any of these.")
+        break
+    steps_per_cm = 20000/0.127
+    steps = int(move_cm*steps_per_cm)
+    motor_command(motor_IP,"DI"+str(steps))
+    motor_command(motor_IP,"FL")
+    wait_for_motor(motor_name)
 
 def wait_for_motor(motor_name):#Waits for the motor to stop turning and then returns the current number of steps in the motor register (how many steps it has moved cumulatively since last reset)
     IP = select_motor(motor_name)
