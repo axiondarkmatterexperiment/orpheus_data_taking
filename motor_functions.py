@@ -1,13 +1,34 @@
 #Function for motor commands
+from data_taking_functions import log_cavity_params
 import socket
+import datetime
+import pytz
 
 BDP_IP = "192.168.25.3"
 TDP_IP = "192.168.25.4"
 CM_IP = "192.168.25.5"
 port = 7776
 
-#physical parameters:
-steps_per_cm = 20000#This is incorrect
+##############################
+# ^^ physical parameters ^^  #
+##############################
+#Threaded rods are 20 threads per inch
+#There are 2.54 cm per inch
+#So it is 7.87401574803 threads per cm, which is 0.127 cm per thread
+#A single motor revolution is one thread
+#A single motor revolution is therefore .127 cm
+#A single revolution of the motor is 20,000 steps
+#The conversion is 157480.314961 steps per cm.
+steps_per_cm = 20000/0.127 #This is 157480.314961 steps per cm
+backlash_steps = 1000 #This is measured empirically (room temp)
+backlash_cm = backlash_steps/steps_per_cm
+#We aim for even spacing between all of the dielectric plates and the mirrors
+BDP_ratio = 4/5
+TDP_ratio = 1/5
+##############################
+# ^^ physical parameters ^^  #
+##############################
+
 
 
 def select_motor(motor_name):
@@ -49,19 +70,7 @@ def motor_command(IP,command):
         s.close()
 
 def coordinated_motion(dl_cm):#dl_cm is the change in cavity length in cm
-    #We aim for even spacing between all of the dielectric plates and the mirrors
     #We assume that we begin in an evenly-spaced configuration
-    BDP_ratio = 4/5
-    TDP_ratio = 1/5
-
-    #Threaded rods are 20 threads per inch
-    #There are 2.54 cm per inch
-    #So it is 7.87401574803 threads per cm, which is 0.127 cm per thread
-    #A single motor revolution is one thread
-    #A single motor revolution is therefore .127 cm
-    #A single revolution of the motor is 20,000 steps
-    #The conversion is 157480.314961 steps per cm.
-    steps_per_cm = 20000/0.127 #This is 157480.314961 steps per cm
     CM_steps = int(dl_cm*steps_per_cm)
     BDP_steps = int(CM_steps*BDP_ratio)
     TDP_steps = int(CM_steps*TDP_ratio)
@@ -89,8 +98,7 @@ def move_motor_cm(motor_name, move_cm):
         motor_IP = CM_IP
     else:
         print("invalid motor name. Choose either bottom_dielectric_plate, top_dielectric_plate, or curved_mirror, or the initials of any of these.")
-        break
-    steps_per_cm = 20000/0.127
+        return
     steps = int(move_cm*steps_per_cm)
     motor_command(motor_IP,"DI"+str(steps))
     motor_command(motor_IP,"FL")
@@ -113,8 +121,17 @@ def wait_for_motor(motor_name):#Waits for the motor to stop turning and then ret
                 f = False
             except ValueError:
                 f = True
+    step_str = motor_name+"_steps"
+    timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
+    log_cavity_params(step_str, timestamp, steps)
     return steps
 
+#The purpose of this function is just to get past the backlash. This was measured empirically at room temperature. It might need to be re-measured when cold.
+def turn_cavity_around(direction):
+    if direction=="pull_back":
+        coordinated_motion(-1*backlash_cm)
+    elif direction=="push_forward":
+        coordinated_motion(backlash_cm)
     
 def move_motor(motor_name, num_steps):
     IP = select_motor(motor_name)

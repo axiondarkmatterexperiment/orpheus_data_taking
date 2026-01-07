@@ -24,7 +24,7 @@ import TextUI
 import threading
 
 current_cavity_l = float(np.genfromtxt('cavity_current_length.txt',delimiter=','))
-cavity_l_array = np.genfromtxt('cavity_lengths_array.csv',delimiter=',')
+cavity_lengths_array = np.genfromtxt('cavity_lengths_array.txt',delimiter=',')
 
 
 term = Terminal()
@@ -78,7 +78,8 @@ def take_data(name):
                 try:
                     GUI.message_tile.text="starting tuning operation " + str(Operator.dl_cm)
                     l_cm = Operator.cavity_length
-                    dl_cm = l_cm - cavity_lengths_array[tuning_index]
+                    dl_cm = cavity_lengths_array[tuning_index]-l_cm  
+                    GUI.dl_cm_tile.set_value(dl_cm)
                     time.sleep(1)
                     GUI.update_ui(term)
                     coordinated_motion(Operator.dl_cm)
@@ -100,9 +101,11 @@ def take_data(name):
                         tune_forward = False
                         GUI.tuning_mode_tile.text="Tuning Backward"
                     time.sleep(3)
-                except:
+                except Exception as e:
                     GUI.message_tile.text= "error during tuning"
                     GUI.update_ui(term)
+                    log_error(repr(e))
+                    GUI.error_tile.text= timestamp_str + ": " + repr(e)
                     time.sleep(3)
 
         #Digitize Gray will inform me about this later
