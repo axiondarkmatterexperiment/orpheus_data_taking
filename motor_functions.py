@@ -10,7 +10,7 @@ CM_IP = "192.168.25.5"
 port = 7776
 
 ##############################
-# ^^ physical parameters ^^  #
+# .. physical parameters ..  #
 ##############################
 #Threaded rods are 20 threads per inch
 #There are 2.54 cm per inch
