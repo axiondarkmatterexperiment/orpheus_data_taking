@@ -278,7 +278,7 @@ def log_reflection_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw
         re, im = iq[::2], iq[1::2]
         p = np.square(re) + np.square(im)
         try:
-            popt, pcov = data_lorentzian_fit(p,f,'transmission')
+            popt, pcov = data_lorentzian_fit(p,f,'reflection')
             perr = np.sqrt(np.diag(pcov))
             p_fit = func_pow_reflected(f, popt[0], popt[1], popt[2], popt[3])
             p_fit = p_fit.tolist()
@@ -393,9 +393,11 @@ def tune_while_tracking_mode(initial_f0_GHz, initial_span_GHz, tune_distance_cm,
         time.sleep(0.1)
         if measure_coupling:
             log_reflection_scan(na_fc_GHz, na_span_GHz/1.7, param_logging=True)
-        coordinated_motion(tune_increment_cm)
-        time.sleep(0.1)
-        j=j+1
+        #Only keep tuning if we have a good fit
+        if np.isnan(current_QL)==False:
+            coordinated_motion(tune_increment_cm)
+            time.sleep(0.1)
+            j=j+1
     return j*tune_increment_cm
 
 
