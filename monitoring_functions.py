@@ -63,6 +63,13 @@ def establish_databases():
                 iq_data REAL
                 );
                 """)
+    
+    cur.execute("""CREATE TABLE IF NOT EXISTS public.digitizations (
+                "timestamp" TIMESTAMPTZ,
+                freqs REAL[],
+                pows REAL[]
+                );
+                """)
 
     cur.execute("DROP TABLE IF EXISTS current_task;")
 
@@ -392,52 +399,8 @@ def switch_rf(setting): #setting values: "transmission", "reflection", "digitize
     return
 
 
-def scan_na(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4):
-    #send the query to the VNA:
-    IP_ADDRESS="192.168.25.7"
-    PORT=5025
-    TIMEOUT=10 #This might need to be changed dependent on the averaging time
 
-    #Sweep setup
-    SCPI_string = "SENS1:FREQ:CENT " + str(f_center_GHz*1e9) + "\n"
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-    SCPI_string = "SENS1:FREQ:SPAN " + str(f_span_GHz*1e9) + "\n"
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-    SCPI_string = "SOUR:POW " + str(na_power) + "\n"
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-
-    #Averaging
-    SCPI_string = "SENS1:AVER:COUNT " + str(n_avgs) + "\n"
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-    SCPI_string = "TRIG:AVER ON\n" #triggers the measurement
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-    SCPI_string = "SENS1:BAND " + str(if_bw_Hz) + "\n" #triggers the measurement
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-    
-    #Triggering
-    SCPI_string = "INIT1\n" #sets trigger to single
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-    SCPI_string = "TRIG:SOUR BUS\n" #sets trigger source to bus
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-    SCPI_string = "TRIG\n" #triggers the measurement
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-    
-    #Wait for measurement to finish
-    SCPI_string = "*OPC?\n" #triggers the measurement
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-    
-    #Take scan data
-    SCPI_string = "CALC1:DATA:SDAT?\n" #ask for the IQ data. Format: n*2-1 is real, n*2 is imaginary
-    timestamp, iq_raw = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-    SCPI_string = "SENS1:FREQ:DATA?\n" #ask for the frequency vector
-    timestamp, f_raw = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-
-    f_raw = np.fromstring(f_raw, dtype=np.float64, sep=',').tolist()
-    iq_raw = np.fromstring(iq_raw, dtype=np.float64, sep=',').tolist()
-
-
-    return f_raw, iq_raw 
-
+#Trying an arbitrarily high "master_timeout" which cuts off the while loop if no response is received in that number of seconds
 def query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string):
     # update_current_task('sending SCPI Query:',SCPI_string) #This might just be annoying
     #Establish connection via the socket
@@ -451,15 +414,39 @@ def query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string):
 
     # Apply recv until a message with a newline at the end is received
     recv_bytes = bytes(0)  # Empty bytes
-    while True:
+    not_timed_out = True
+    while not_timed_out:
         recv_bytes += socket_connection.recv(4096)
         # print(recv_bytes.decode())
         if recv_bytes[-1:] == b"\n":  # Check if last term is a newline
             break
+        if datetime.datetime.now(pytz.timezone('US/Pacific'))-timestamp>datetime.timedelta(seconds=TIMEOUT):
+            return timestamp, False
 
     val_raw = recv_bytes.decode()
 
     return timestamp, val_raw
+
+#Trying an arbitrarily high "master_timeout" which cuts off the while loop if no response is received in that number of seconds
+#def query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string, master_timeout=10000000):
+#    # update_current_task('sending SCPI Query:',SCPI_string) #This might just be annoying
+#    #Establish connection via the socket
+#    socket_connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#    socket_connection.settimeout(TIMEOUT)
+#    socket_connection.connect((IP_ADDRESS, PORT))
+#
+#    # Send encoded message and record time of the measurement
+#    socket_connection.sendall(SCPI_string.encode())
+#    timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
+#
+#    # Apply recv until a message with a newline at the end is received
+#    recv_bytes = bytes(0)  # Empty bytes
+#    recv_bytes += socket_connection.recv(4096)
+#    if recv_bytes[-1:] == b"\n":  # Check if last term is a newline
+#        val_raw = recv_bytes.decode()
+#        return timestamp, val_raw
+#    else:
+#        return timestamp, False
     
 
 #This is for sending SCPI commands which you don't expect any response for. (Using query_SCPI for said commands causes a timeout error).
