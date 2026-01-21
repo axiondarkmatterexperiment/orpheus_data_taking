@@ -229,12 +229,12 @@ def log_transmission_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_
     switch_rf("transmission")
     timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
     f, iq = scan_na(f_center_GHz, f_span_GHz, na_power, n_avgs, if_bw_Hz) 
+    re = iq[::2]
+    im = iq[1::2]
+    p = np.add(np.square(re),np.square(im)).astype(np.float64)
+    p = p.tolist()
+    log_na_scan("transmission", timestamp, f, iq)
     if f and iq:
-        re = iq[::2]
-        im = iq[1::2]
-        p = np.add(np.square(re),np.square(im)).astype(np.float64)
-        p = p.tolist()
-        log_na_scan("transmission", timestamp, f, iq)
         if fitting:
             re, im = iq[::2], iq[1::2]    
             p = np.square(re) + np.square(im)
@@ -274,12 +274,12 @@ def log_reflection_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw
     switch_rf("reflection")
     timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
     f, iq = scan_na(f_center_GHz, f_span_GHz, na_power, n_avgs, if_bw_Hz) 
+    re = iq[0::2]
+    im = iq[1::2]
+    p = np.add(np.square(re),np.square(im)).astype(np.float64)
+    p = p.tolist()
+    log_na_scan("reflection", timestamp, f, iq)
     if f and iq:
-        re = iq[0::2]
-        im = iq[1::2]
-        p = np.add(np.square(re),np.square(im)).astype(np.float64)
-        p = p.tolist()
-        log_na_scan("reflection", timestamp, f, iq)
         if fitting:
             re, im = iq[::2], iq[1::2]
             p = np.square(re) + np.square(im)
