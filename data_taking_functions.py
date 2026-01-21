@@ -14,7 +14,7 @@ import datetime
 import pytz
 #                                 side A temp, side B temp, hall 1, hall 2,  hall 3,   hall 4,  outside of can temp sensor
 from calibration_functions import SN_U04844, SN_X201099, SN_68179, SN_68253, SN_64753, SN_67247, PT_100
-from monitoring_functions import query_SCPI, write_SCPI
+from monitoring_functions import query_SCPI, write_SCPI, log_error
 from fitting_functions import data_lorentzian_fit, deconvolve_phase, calculate_coupling, func_pow_transmitted, func_pow_reflected
 
 def log_cavity_params(param_name, timestamp, val):
@@ -229,87 +229,96 @@ def log_transmission_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_
     switch_rf("transmission")
     timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
     f, iq = scan_na(f_center_GHz, f_span_GHz, na_power, n_avgs, if_bw_Hz) 
-    re = iq[::2]
-    im = iq[1::2]
-    p = np.add(np.square(re),np.square(im)).astype(np.float64)
-    p = p.tolist()
-    log_na_scan("transmission", timestamp, f, iq)
-    if fitting:
-        re, im = iq[::2], iq[1::2]    
-        p = np.square(re) + np.square(im)
-        try:
-            popt, pcov = data_lorentzian_fit(p,f,'transmission')
-            perr = np.sqrt(np.diag(pcov))
-            p_fit = func_pow_transmitted(f, popt[0], popt[1], popt[2], popt[3])
-            p_fit = p_fit.tolist()
-        except:
-            popt = [np.nan, np.nan, np.nan, np.nan]
-            perr = [np.nan, np.nan, np.nan, np.nan]
-            p_fit = []
-            print("fit failed")
-        if param_logging==True:
-            log_cavity_params("f0_trans",timestamp, float(popt[0]))
-            log_cavity_params("Q_trans",timestamp, float(popt[1]))
-            log_cavity_params("dy_trans",timestamp, float(popt[2]))
-            log_cavity_params("C_trans",timestamp, float(popt[3]))
-             
-            log_cavity_params("f0_err_trans",timestamp, float(perr[0]))
-            log_cavity_params("Q_err_trans",timestamp, float(perr[1]))
-            log_cavity_params("dy_err_trans",timestamp, float(perr[2]))
-            log_cavity_params("C_err_trans",timestamp, float(perr[3]))
-
+    if f and iq:
+        re = iq[::2]
+        im = iq[1::2]
+        p = np.add(np.square(re),np.square(im)).astype(np.float64)
         p = p.tolist()
-        log_na_scan_for_display("transmission", timestamp, f, p, p_fit)
-        return popt[0], popt[1]
+        log_na_scan("transmission", timestamp, f, iq)
+        if fitting:
+            re, im = iq[::2], iq[1::2]    
+            p = np.square(re) + np.square(im)
+            try:
+                popt, pcov = data_lorentzian_fit(p,f,'transmission')
+                perr = np.sqrt(np.diag(pcov))
+                p_fit = func_pow_transmitted(f, popt[0], popt[1], popt[2], popt[3])
+                p_fit = p_fit.tolist()
+            except:
+                popt = [np.nan, np.nan, np.nan, np.nan]
+                perr = [np.nan, np.nan, np.nan, np.nan]
+                p_fit = []
+                print("fit failed")
+            if param_logging==True:
+                log_cavity_params("f0_trans",timestamp, float(popt[0]))
+                log_cavity_params("Q_trans",timestamp, float(popt[1]))
+                log_cavity_params("dy_trans",timestamp, float(popt[2]))
+                log_cavity_params("C_trans",timestamp, float(popt[3]))
+                 
+                log_cavity_params("f0_err_trans",timestamp, float(perr[0]))
+                log_cavity_params("Q_err_trans",timestamp, float(perr[1]))
+                log_cavity_params("dy_err_trans",timestamp, float(perr[2]))
+                log_cavity_params("C_err_trans",timestamp, float(perr[3]))
+
+            p = p.tolist()
+            log_na_scan_for_display("transmission", timestamp, f, p, p_fit)
+            return popt[0], popt[1]
+        else:
+            log_na_scan_for_display(fitting, "transmission", timestamp, f, p)
+            return
     else:
-        log_na_scan_for_display(fitting, "transmission", timestamp, f, p)
+        log_error(timestamp, "empty trans, SCPI timeout likely")
         return
+
 
 def log_reflection_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4, fitting=True, param_logging=True):
     switch_rf("reflection")
     timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
     f, iq = scan_na(f_center_GHz, f_span_GHz, na_power, n_avgs, if_bw_Hz) 
-    re = iq[0::2]
-    im = iq[1::2]
-    p = np.add(np.square(re),np.square(im)).astype(np.float64)
-    p = p.tolist()
-    log_na_scan("reflection", timestamp, f, iq)
-    if fitting:
-        re, im = iq[::2], iq[1::2]
-        p = np.square(re) + np.square(im)
-        try:
-            popt, pcov = data_lorentzian_fit(p,f,'reflection')
-            perr = np.sqrt(np.diag(pcov))
-            p_fit = func_pow_reflected(f, popt[0], popt[1], popt[2], popt[3])
-            p_fit = p_fit.tolist()
-        except:
-            popt = [np.nan, np.nan, np.nan, np.nan]
-            perr = [np.nan, np.nan, np.nan, np.nan]
-            p_fit = []
-            print("fit failed")
-        if param_logging==True:
-            log_cavity_params("f0_refl",timestamp, float(popt[0]))
-            log_cavity_params("Q_refl",timestamp, float(popt[1]))
-            log_cavity_params("dy_refl",timestamp, float(popt[2]))
-            log_cavity_params("C_refl",timestamp, float(popt[3]))
-             
-            log_cavity_params("f0_err_refl",timestamp, float(perr[0]))
-            log_cavity_params("Q_err_refl",timestamp, float(perr[1]))
-            log_cavity_params("dy_err_refl",timestamp, float(perr[2]))
-            log_cavity_params("C_err_refl",timestamp, float(perr[3]))
-       
-        phase = np.unwrap(np.angle(np.asarray(re)+1j*np.asarray(im)))
-        cavity_phase = deconvolve_phase(f, phase)
-        beta = calculate_coupling(popt[2]/popt[3],cavity_phase)
-        
-        log_cavity_params("beta",timestamp,float(beta))
-
+    if f and iq:
+        re = iq[0::2]
+        im = iq[1::2]
+        p = np.add(np.square(re),np.square(im)).astype(np.float64)
         p = p.tolist()
-        log_na_scan_for_display("reflection", timestamp, f, p, p_fit)
+        log_na_scan("reflection", timestamp, f, iq)
+        if fitting:
+            re, im = iq[::2], iq[1::2]
+            p = np.square(re) + np.square(im)
+            try:
+                popt, pcov = data_lorentzian_fit(p,f,'reflection')
+                perr = np.sqrt(np.diag(pcov))
+                p_fit = func_pow_reflected(f, popt[0], popt[1], popt[2], popt[3])
+                p_fit = p_fit.tolist()
+            except:
+                popt = [np.nan, np.nan, np.nan, np.nan]
+                perr = [np.nan, np.nan, np.nan, np.nan]
+                p_fit = []
+                print("fit failed")
+            if param_logging==True:
+                log_cavity_params("f0_refl",timestamp, float(popt[0]))
+                log_cavity_params("Q_refl",timestamp, float(popt[1]))
+                log_cavity_params("dy_refl",timestamp, float(popt[2]))
+                log_cavity_params("C_refl",timestamp, float(popt[3]))
+                 
+                log_cavity_params("f0_err_refl",timestamp, float(perr[0]))
+                log_cavity_params("Q_err_refl",timestamp, float(perr[1]))
+                log_cavity_params("dy_err_refl",timestamp, float(perr[2]))
+                log_cavity_params("C_err_refl",timestamp, float(perr[3]))
+           
+            phase = np.unwrap(np.angle(np.asarray(re)+1j*np.asarray(im)))
+            cavity_phase = deconvolve_phase(f, phase)
+            beta = calculate_coupling(popt[2]/popt[3],cavity_phase)
+            
+            log_cavity_params("beta",timestamp,float(beta))
 
-        return popt[0], popt[1], beta
+            p = p.tolist()
+            log_na_scan_for_display("reflection", timestamp, f, p, p_fit)
+
+            return popt[0], popt[1], beta
+        else:
+            log_na_scan_for_display(fitting, "reflection", timestamp, f, p)
+            return
     else:
-        log_na_scan_for_display(fitting, "reflection", timestamp, f, p)
+        log_error(timestamp, "empty refl, SCPI timeout likely")
         return
     
 def log_transmission_widescan(f_center_GHz, f_span_GHz, na_power=-5, n_avgs=30, if_bw_Hz = 1e4):
@@ -376,6 +385,8 @@ def tune_while_tracking_mode(initial_f0_GHz, initial_span_GHz, tune_distance_cm,
     na_span_GHz = initial_span_GHz
     na_fc_GHz = initial_f0_GHz
     num_steps = int(tune_distance_cm/tune_increment_cm)
+    min_Q = 1000 #If measured Q is below this then ignore it and use this value
+    max_Q = 6000 #If measured Q is above this then ignore it and use this value
     j=0
     while j<num_steps:
         #Look at a wider window after tuning to find the f0 and rough estimate of QL. Don't log the measured cavity parameters
@@ -388,7 +399,12 @@ def tune_while_tracking_mode(initial_f0_GHz, initial_span_GHz, tune_distance_cm,
         na_fc, current_QL = log_transmission_scan(na_fc_GHz, na_span_GHz, param_logging=False)
         time.sleep(0.1)
         na_fc_GHz = na_fc/1e9
-        na_span_GHz = 5*na_fc_GHz/current_QL
+        if current_QL > min_Q and current_QL < max_Q:
+            na_span_GHz = 5*na_fc_GHz/current_QL
+        elif current_QL < min_Q:
+            na_span_GHz = 5*na_fc_GHz/min_Q
+        else:
+            na_span_GHz = 5*na_fc_GHz/max_Q
         na_fc, current_QL = log_transmission_scan(na_fc_GHz, na_span_GHz, param_logging=True)
         time.sleep(0.1)
         if measure_coupling:
