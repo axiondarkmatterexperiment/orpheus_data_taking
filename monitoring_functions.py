@@ -400,7 +400,6 @@ def switch_rf(setting): #setting values: "transmission", "reflection", "digitize
 
 
 
-#Trying an arbitrarily high "master_timeout" which cuts off the while loop if no response is received in that number of seconds
 def query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string):
     # update_current_task('sending SCPI Query:',SCPI_string) #This might just be annoying
     #Establish connection via the socket
@@ -412,7 +411,8 @@ def query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string):
     socket_connection.sendall(SCPI_string.encode())
     timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
 
-    # Apply recv until a message with a newline at the end is received
+    # Apply recv until a message with a newline at the end is received.
+    # If TIMEOUT is reached before then cancel and return timestamp and False boolean.
     recv_bytes = bytes(0)  # Empty bytes
     not_timed_out = True
     while not_timed_out:
