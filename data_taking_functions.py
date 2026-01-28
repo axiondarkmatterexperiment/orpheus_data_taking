@@ -14,7 +14,7 @@ import datetime
 import pytz
 #                                 side A temp, side B temp, hall 1, hall 2,  hall 3,   hall 4,  outside of can temp sensor
 from calibration_functions import SN_U04844, SN_X201099, SN_68179, SN_68253, SN_64753, SN_67247, PT_100
-from monitoring_functions import query_SCPI, write_SCPI, log_error
+from monitoring_functions import query_SCPI, write_SCPI, log_error, update_current_task
 from fitting_functions import data_lorentzian_fit, deconvolve_phase, calculate_coupling, func_pow_transmitted, func_pow_reflected
 
 def log_cavity_params(param_name, timestamp, val):
@@ -226,6 +226,7 @@ def scan_na(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4):
     return f_raw, iq_raw 
 
 def log_transmission_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4, fitting=True, param_logging=True):
+    update_current_task("log_transmission_scan")
     switch_rf("transmission")
     timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
     f, iq = scan_na(f_center_GHz, f_span_GHz, na_power, n_avgs, if_bw_Hz) 
@@ -264,13 +265,14 @@ def log_transmission_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_
             return popt[0], popt[1]
         else:
             log_na_scan_for_display(fitting, "transmission", timestamp, f, p)
-            return
+            return np.nan, np.nan
     else:
         log_error(timestamp, "empty trans, SCPI timeout likely")
-        return
+        return np.nan, np.nan
 
 
 def log_reflection_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4, fitting=True, param_logging=True):
+    update_current_task("log_reflection_scan")
     switch_rf("reflection")
     timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
     f, iq = scan_na(f_center_GHz, f_span_GHz, na_power, n_avgs, if_bw_Hz) 
@@ -293,22 +295,24 @@ def log_reflection_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw
                 perr = [np.nan, np.nan, np.nan, np.nan]
                 p_fit = []
                 print("fit failed")
+            
+            #Calculate beta from the fit values
+            phase = np.unwrap(np.angle(np.asarray(re)+1j*np.asarray(im)))
+            cavity_phase = deconvolve_phase(f, phase)
+            beta = calculate_coupling(popt[2]/popt[3],cavity_phase)
+            
             if param_logging==True:
                 log_cavity_params("f0_refl",timestamp, float(popt[0]))
                 log_cavity_params("Q_refl",timestamp, float(popt[1]))
                 log_cavity_params("dy_refl",timestamp, float(popt[2]))
                 log_cavity_params("C_refl",timestamp, float(popt[3]))
+                log_cavity_params("beta",timestamp,float(beta))
                  
                 log_cavity_params("f0_err_refl",timestamp, float(perr[0]))
                 log_cavity_params("Q_err_refl",timestamp, float(perr[1]))
                 log_cavity_params("dy_err_refl",timestamp, float(perr[2]))
                 log_cavity_params("C_err_refl",timestamp, float(perr[3]))
-           
-            phase = np.unwrap(np.angle(np.asarray(re)+1j*np.asarray(im)))
-            cavity_phase = deconvolve_phase(f, phase)
-            beta = calculate_coupling(popt[2]/popt[3],cavity_phase)
-            
-            log_cavity_params("beta",timestamp,float(beta))
+                #The calculate_coupling function does not have error propagation calculations to give a value for beta_err. I should add it.
 
             p = p.tolist()
             log_na_scan_for_display("reflection", timestamp, f, p, p_fit)
@@ -316,10 +320,10 @@ def log_reflection_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw
             return popt[0], popt[1], beta
         else:
             log_na_scan_for_display(fitting, "reflection", timestamp, f, p)
-            return
+            return np.nan, np.nan, np.nan
     else:
         log_error(timestamp, "empty refl, SCPI timeout likely")
-        return
+        return np.nan, np.nan, np.nan
     
 def log_transmission_widescan(f_center_GHz, f_span_GHz, na_power=-5, n_avgs=30, if_bw_Hz = 1e4):
     switch_rf("transmission")
@@ -385,13 +389,16 @@ def tune_while_tracking_mode(initial_f0_GHz, initial_span_GHz, tune_distance_cm,
     na_span_GHz = initial_span_GHz
     na_fc_GHz = initial_f0_GHz
     num_steps = int(tune_distance_cm/tune_increment_cm)
+    estimated_f0_increment_GHz = tune_increment_cm*-1 #I roughly observe that contracting the cavity by 1cm increases frequency by 1 GHz
     min_Q = 1000 #If measured Q is below this then ignore it and use this value
-    max_Q = 6000 #If measured Q is above this then ignore it and use this value
+    max_Q = 8000 #If measured Q is above this then ignore it and use this value
     j=0
     while j<num_steps:
         #Look at a wider window after tuning to find the f0 and rough estimate of QL. Don't log the measured cavity parameters
-        na_span_GHz=2*na_span_GHz
+        #Why am I basing it on the Q and not the step size? 
+        na_span_GHz=3*na_span_GHz
         na_fc, current_QL = log_transmission_scan(na_fc_GHz, na_span_GHz, param_logging=False)
+        na_fc_hold = na_fc #This is to hold the first scanned fc value for this loop so that we can return to it if the mode is lost.
         time.sleep(0.1)
         na_fc_GHz = na_fc/1e9
         #Make the window smaller around the approximate peak and retake the transmission scan. Log the measured cavity parameters
@@ -406,14 +413,21 @@ def tune_while_tracking_mode(initial_f0_GHz, initial_span_GHz, tune_distance_cm,
         else:
             na_span_GHz = 5*na_fc_GHz/max_Q
         na_fc, current_QL = log_transmission_scan(na_fc_GHz, na_span_GHz, param_logging=True)
+        timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
         time.sleep(0.1)
-        if measure_coupling:
+        if measure_coupling and np.isnan(current_QL)==False:
             log_reflection_scan(na_fc_GHz, na_span_GHz/1.7, param_logging=True)
         #Only keep tuning if we have a good fit
         if np.isnan(current_QL)==False:
+            print(str(timestamp) + "  --  measured QL = " + str(current_QL) + " -- measured f0 = " + str(np.trunc(na_fc/1e5)/1e4) + " GHz.")
             coordinated_motion(tune_increment_cm)
             time.sleep(0.1)
             j=j+1
+        else:
+            na_fc_GHz = na_fc_hold/1e9 #Presumably this is a good value to search at since the mode was lost in this loop and not before this loop and we have not tuned at all yet.
+            na_span_GHz = initial_span_GHz #I think that reverting to the original window size is a good backup.
+            print(str(timestamp) + " transmission scan failed or timed out, restarting loop at initial fc of scan and not tuning.")
+
     return j*tune_increment_cm
 
 
