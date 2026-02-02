@@ -13,7 +13,7 @@ from OrpheusGUI import OrpheusGUI
 from OrpheusOperator import OrpheusOperator
 from monitoring_functions import *
 from motor_functions import coordinated_motion
-from data_taking_functions import log_transmission_scan, log_reflection_scan
+from data_taking_functions import log_transmission_scan, log_reflection_scan, digitize, set_lo_center_freq, wait_for_digitization
 import datetime
 import pytz
 import time
@@ -71,8 +71,27 @@ def take_data(name):
                 except (TypeError, ZeroDivisionError):
                     GUI.message_tile.text="Reflection fail:"+str(timestamp)
                     GUI.update_ui(term)
+        
+        #Digitizing:
+        timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
+        if Operator.digitization_period != 0:
+            if loop_counter % Operator.digitization_period == 0:
+                try:
+                    tx, lo_freq = set_lo_center_freq(float(Operator.na_fc)*1e9)
+                    digitize(30)
+                    GUI.message_tile.text = "Digitizing at fc = " + str(lo_freq)
+                    GUI.upate_ui(term)
+                    wait_for_digitization()
+                    finish_timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
+                    GUI.message_tile.text = "Digitization complete at " + str(finish_timestamp)
+                    GUI.update_ui(term)
+                except Exception as e:
+                    log_error(timestamp, repr(e))
+                    GUI.message_tile.text="error digitization " + str(timestamp) + ": " + repr(e)
+                    GUI.update_ui(term)
 
         #Cavity Tuning:
+        timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
         if Operator.tuning_period != 0:
             if loop_counter % Operator.tuning_period == 0:
                 try:
@@ -102,14 +121,9 @@ def take_data(name):
                         GUI.tuning_mode_tile.text="Tuning Backward"
                     time.sleep(3)
                 except Exception as e:
-                    GUI.message_tile.text= "error during tuning"
+                    log_error(timestamp, repr(e))
+                    GUI.message_tile.text="error tuning" + str(timestamp) + ": " + repr(e)
                     GUI.update_ui(term)
-                    log_error(repr(e))
-                    GUI.error_tile.text= timestamp_str + ": " + repr(e)
-                    time.sleep(3)
-
-        #Digitize Gray will inform me about this later
-        #digitize(f0,dig_span,
 
         #Widescan every 20 cycles:
         #if loop_counter%20==0:

@@ -1,5 +1,6 @@
 #Function for motor commands
 from data_taking_functions import log_cavity_params
+from monitoring_functions import log_error
 import socket
 import datetime
 import pytz
@@ -62,10 +63,10 @@ def motor_command(IP,command):
         # Read and print the motor's response
         response = s.recv(2048)
         return response.decode('ascii').strip()
-        print(f"Motor response: {response.decode('ascii').strip()}")
 
     except socket.error as err:
-        print(f"Error communicating with motor: {err}")
+        err_str = f"Error communicating with motor: {err}"
+        log_error(datetime.datetime.now(pytz.timezone('US/Pacific')), err_str)
     finally:
         s.close()
 

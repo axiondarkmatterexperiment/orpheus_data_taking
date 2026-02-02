@@ -160,7 +160,7 @@ def switch_rf(setting): #setting values: "transmission", "reflection", "digitize
         ch1="1"
         ch2="0"
     else:
-        print("not doing anything. make sure the setting is either transmission, reflection, or digitization.")
+        #print("not doing anything. make sure the setting is either transmission, reflection, or digitization.")
         return
    
     write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "INST:SEL CH1\n")
@@ -248,7 +248,7 @@ def log_transmission_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_
                 popt = [np.nan, np.nan, np.nan, np.nan]
                 perr = [np.nan, np.nan, np.nan, np.nan]
                 p_fit = []
-                print("fit failed")
+                #print("fit failed")
             if param_logging==True:
                 log_cavity_params("f0_trans",timestamp, float(popt[0]))
                 log_cavity_params("Q_trans",timestamp, float(popt[1]))
@@ -294,7 +294,7 @@ def log_reflection_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw
                 popt = [np.nan, np.nan, np.nan, np.nan]
                 perr = [np.nan, np.nan, np.nan, np.nan]
                 p_fit = []
-                print("fit failed")
+                #print("fit failed")
             
             #Calculate beta from the fit values
             phase = np.unwrap(np.angle(np.asarray(re)+1j*np.asarray(im)))
@@ -366,6 +366,7 @@ def digitize(acquisition_time):
     freqs = np.arange(np.size(pows)).tolist()
     log_digitization(timestamp, freqs, pows)
     return timestamp, spectrum
+
     
 def wait_for_digitization():
     IP_ADDRESS = "192.168.25.8"
@@ -376,13 +377,18 @@ def wait_for_digitization():
     while digitizing:
         timestamp, dig_status = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "GET:STATUS?\n")
         dig_status = dig_status[0:-1] #Remove the \n on the end of the returned string
-        print(dig_status)
+        #print(dig_status)
         if dig_status == "RUNNING":
             digitizing = True
         elif dig_status == "IDLE":
             digitizing = False
         time.sleep(1)
     return
+
+def digitize_at_fc(acquisition_time, center_freq):
+    set_lo_center_freq(center_freq)
+    digitize(acquisition_time)
+    wait_for_digitization()
 
 def tune_while_tracking_mode(initial_f0_GHz, initial_span_GHz, tune_distance_cm, tune_increment_cm, measure_coupling=True):
     from motor_functions import coordinated_motion

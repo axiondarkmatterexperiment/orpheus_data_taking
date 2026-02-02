@@ -8,13 +8,14 @@ class OrpheusGUI:
         Operator=OrpheusOperator()
         #Commands catalogue:
         self.catalogue_tile = ListTile(["na_power_trans,<>: (dBm)", "na_power_refl,<>: (dBm)", "na_fc,<>: (GHz)", "na_span,<>: (GHz)",
-                                        "transmission_period,<>: ()","reflection_period,<>: ()","tuning_period,<>: ()"],title="Command Catalogue",rect=(0,0,100,0))
+                                        "transmission_period,<>: ()","reflection_period,<>: ()","tuning_period,<>: ()"],title="Command Catalogue",rect=(0,0,65,0))
        
         self.tuning_mode_tile = TextTile("tuning forward",(0,0,35,0),title="tuning mode") 
         #input tile and message tile (on the bottom of the GUI):
         self.input_tile = TextEntryTile("",(0,0,35,4),title="command input:")
         self.message_tile = TextTile("",(0,0,65,4),title="Message")	
-        
+        self.error_tile = TextTile("",(0,0,100,4),title="Most recent error:")
+
         #values display:
         self.na_power_tile = ValueTile(float(Operator.na_power),(0,0,33,4),title="NA Power", units="dBm")
         self.na_fc_tile = ValueTile(float(Operator.na_fc)/1e9,(0,0,33,4),title="NA fc", units="GHz")
@@ -33,7 +34,7 @@ class OrpheusGUI:
         self.tuning_period_tile = ValueTile(Operator.tuning_period,(0,0,20,4),title="tuning period")
         self.widescan_period_tile = ValueTile(Operator.widescan_period,(0,0,20,4),title="widescan period")
 
-        self.ui=VStackTile((0,0,100,52),[HStackTile((0,0,100,24),[self.catalogue_tile]),
+        self.ui=VStackTile((0,0,100,52),[HStackTile((0,0,100,12),[self.tuning_mode_tile,self.catalogue_tile]),
                         HStackTile((0,0,100,4),[self.na_power_tile,
                                 self.na_fc_tile,
                 	       	    self.na_span_tile]),
@@ -49,7 +50,8 @@ class OrpheusGUI:
                                 self.tuning_period_tile,
                                 self.widescan_period_tile]),
                         HStackTile((0,0,100,4),[self.input_tile,
-                                self.message_tile])])#,
+                                self.message_tile]),
+                        HStackTile((0,0,100,4),[self.error_tile])])#,
         
 
     def initialize_ui(self):

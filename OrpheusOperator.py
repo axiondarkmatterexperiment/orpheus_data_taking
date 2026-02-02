@@ -13,7 +13,7 @@ class OrpheusOperator:
         self.transmission_period = 1
         self.reflection_period = 1
         self.digitization_period = 0
-        self.tuning_period = 1
+        self.tuning_period = 0
         self.widescan_period=0
 
         #Initialize the VNA
