@@ -39,10 +39,10 @@ def take_data(name):
     tune_forward = True
     Operator.cavity_length = current_cavity_l
     
-    while True:
+    while Operator.run_condition:
         #Transmission Scan:
         timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
-        if Operator.transmission_period != 0:
+        if Operator.transmission_period != 0 and Operator.run_condition:
             if loop_counter % Operator.transmission_period == 0:
                 try:
                     GUI.na_fc_tile.set_value(float(Operator.na_fc))
@@ -61,7 +61,7 @@ def take_data(name):
         
         #Reflection Scan:
         timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
-        if Operator.reflection_period != 0:
+        if Operator.reflection_period != 0 and Operator.run_condition:
             if loop_counter % Operator.reflection_period == 0:
                 try:
                     f0_refl,Q_refl,beta = log_reflection_scan(np.float64(Operator.na_fc), np.float64(Operator.na_span))
@@ -74,7 +74,7 @@ def take_data(name):
         
         #Digitizing:
         timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
-        if Operator.digitization_period != 0:
+        if Operator.digitization_period != 0 and Operator.run_condition:
             if loop_counter % Operator.digitization_period == 0:
                 try:
                     tx, lo_freq = set_lo_center_freq(float(Operator.na_fc)*1e9)
@@ -87,12 +87,12 @@ def take_data(name):
                     GUI.update_ui(term)
                 except Exception as e:
                     log_error(timestamp, repr(e))
-                    GUI.message_tile.text="error digitization " + str(timestamp) + ": " + repr(e)
+                    GUI.error_tile.text="digitizing: " + str(timestamp)[0:19] + ": " + repr(e)
                     GUI.update_ui(term)
 
         #Cavity Tuning:
         timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
-        if Operator.tuning_period != 0:
+        if Operator.tuning_period != 0 and Operator.run_condition:
             if loop_counter % Operator.tuning_period == 0:
                 try:
                     GUI.message_tile.text="starting tuning operation " + str(Operator.dl_cm)
@@ -122,13 +122,14 @@ def take_data(name):
                     time.sleep(3)
                 except Exception as e:
                     log_error(timestamp, repr(e))
-                    GUI.message_tile.text="error tuning" + str(timestamp) + ": " + repr(e)
+                    GUI.error_tile.text="tuning: " + str(timestamp)[0:19] + ": " + repr(e)
                     GUI.update_ui(term)
 
         #Widescan every 20 cycles:
         #if loop_counter%20==0:
             #log_transmission_scan(np.float64(Operator.widescan_fc), np.float64(Operator.widescan_span), np.float64(Operator.widescan_power), np.float64(Operator.widescan_N_avgs))
-        
+        GUI.message_tile.text="run_condition="+str(Operator.run_condition)
+        time.sleep(1)
         loop_counter = loop_counter+1
         
 
@@ -150,8 +151,19 @@ def run_GUI():
                     input_str=GUI.input_tile.text
                     GUI.input_tile.text=""
                     if input_str=="quit":
-                        internal_thread.stop()
-                        quit()
+                        exec("Operator.run_condition=False")
+                        GUI.message_tile.text="Operator Shutting Down..."
+                        while internal_thread.is_alive():
+                            GUI.message_tile.text="Operator Shutting Down..."
+                            GUI.update_ui(term)
+                            time.sleep(1)
+                            GUI.message_tile.text="Waiting for operator to shut down..."
+                            GUI.update_ui(term)
+                            time.sleep(1)
+                        GUI.message_tile.text="Operator has shut down. Closing GUI."
+                        GUI.update_ui(term)
+                        time.sleep(1)
+                        break
                     else:
                         entity_str = input_str[0:input_str.find(',')]
                         val_str = input_str[(input_str.find(',')+1):]
@@ -169,7 +181,7 @@ def run_GUI():
     term.exit_fullscreen()
 
 run_GUI()
-
+os.system('clear')
 #establish_databases()
 #thread1 = threading.Thread(target=run_GUI, args=("GUI_runner",))
 #thread2 = threading.Thread(target=take_data, args=("data_taker",))
