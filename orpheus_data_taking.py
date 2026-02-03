@@ -154,12 +154,21 @@ def run_GUI():
                         exec("Operator.run_condition=False")
                         GUI.message_tile.text="Operator Shutting Down..."
                         while internal_thread.is_alive():
-                            GUI.message_tile.text="Operator Shutting Down..."
+                            GUI.message_tile.text="|Operator Shutting Down...|"
                             GUI.update_ui(term)
-                            time.sleep(1)
-                            GUI.message_tile.text="Waiting for operator to shut down..."
+                            time.sleep(.3)
+                            GUI.message_tile.text=r'\Operator Shutting Down...'+'\\'
                             GUI.update_ui(term)
-                            time.sleep(1)
+                            time.sleep(.3)
+                            GUI.message_tile.text="-Operator Shutting Down...-"
+                            GUI.update_ui(term)
+                            time.sleep(.3)
+                            GUI.message_tile.text="/Operator Shutting Down.../"
+                            GUI.update_ui(term)
+                            time.sleep(.3)
+                            GUI.message_tile.text="-Operator Shutting Down...-"
+                            GUI.update_ui(term)
+                            time.sleep(.3)
                         GUI.message_tile.text="Operator has shut down. Closing GUI."
                         GUI.update_ui(term)
                         time.sleep(1)
@@ -168,7 +177,7 @@ def run_GUI():
                         entity_str = input_str[0:input_str.find(',')]
                         val_str = input_str[(input_str.find(',')+1):]
                         #Catalogue of entities:
-                        catalogue = np.asarray(["na_power", "na_fc", "na_span", "dl_cm", "transmission_period", "reflection_period", "tuning_period"])
+                        catalogue = np.asarray(["na_power", "na_fc", "na_span", "dl_cm", "transmission_period", "reflection_period", "tuning_period", "digitization_period"])
                         cat_idx = np.argwhere(catalogue==entity_str)
                         #If an item in the catalogue has been selected, update the DAQ variable, which is always a string
                         if np.size(cat_idx)>0:
