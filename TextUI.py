@@ -152,7 +152,7 @@ class ValueTile(TextTile):
         self.set_value(value)
 
     def set_value(self,value):
-        self.text="{:.2f} {}".format(value,self.units)
+        self.text="{:.4f} {}".format(value,self.units)
 
 class TextEntryTile(TextTile):
     def __init__(self,text,rect=(0,0,0,0),title=None):
