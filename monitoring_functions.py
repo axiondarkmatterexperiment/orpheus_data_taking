@@ -179,6 +179,27 @@ def log_sensor(sensor_name, timestamp, val_raw, val_cal ):
     cur.close()
     conn.close()
 
+def log_insert_temps():
+    update_current_task('logging insert temperatures')
+    IP_ADDRESS="192.168.25.11"
+    PORT=1234
+    TIMEOUT=5
+    MEAS_HFET = "MEAS:FRES? (@XXX)\n"
+    MEAS_FLAT = "MEAS:FRES? (@XXX)\n"
+    MEAS_DIEL = "MEAS:FRES? (@XXX)\n"
+    MEAS_CURV = "MEAS:FRES? (@XXX)\n"
+    
+    timestamp_hfet, val_raw_hfet = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, MEAS_HFET)
+    timestamp_flat, val_raw_flat = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, MEAS_FLAT)
+    timestamp_diel, val_raw_diel = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, MEAS_DIEL)
+    timestamp_curv, val_raw_curv = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, MEAS_CURV)
+    
+    val_raw_hfet = float(val_raw_hfet)
+    val_raw_flat = float(val_raw_flat)
+    val_raw_diel = float(val_raw_diel)
+    val_raw_curv = float(val_raw_curv)
+
+
 def log_magnet_temps():
     update_current_task('logging magnet temperatures')
     #Send the query to the LHe level sensor

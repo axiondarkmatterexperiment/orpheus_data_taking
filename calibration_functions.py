@@ -52,6 +52,8 @@ def PT_100(resistance):
     values_y = [4.2,20,50,73.15,123.15,173.15,223.15,273.15,323.15,373.15]
     return piecewise_cal(values_x,values_y,abs(resistance),log_x=True,log_y=True)
 
+#def RUOX_202A(resistance):
+
 #Hall sensor 1
 #This is a hall effect magnetic field strength sensor, model HGCT-3020 from LakeShore
 #The muxer reads out a voltage. These calibration values are assuming a 100 mA excitation current.

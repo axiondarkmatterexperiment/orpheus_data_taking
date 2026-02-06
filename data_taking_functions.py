@@ -191,9 +191,11 @@ def scan_na(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4):
     #Averaging
     SCPI_string = "SENS1:AVER:COUNT " + str(n_avgs) + "\n"
     write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-    SCPI_string = "TRIG:AVER ON\n" #triggers the measurement
+    SCPI_string = "TRIG:AVER ON\n" 
     write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-    SCPI_string = "SENS1:BAND " + str(if_bw_Hz) + "\n" #triggers the measurement
+    SCPI_string = "TRIG:AVER:CLE\n"#Clears and restarts the averaging of the measurement data
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    SCPI_string = "SENS1:BAND " + str(if_bw_Hz) + "\n"
     write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
     
     #Triggering
