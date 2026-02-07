@@ -40,6 +40,17 @@ def take_data(name):
     Operator.cavity_length = current_cavity_l
     
     while Operator.run_condition:
+        #Poll Sensors:
+#        timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
+#        if Operator.sensors_period != 0 and Operator.run_condition:
+#            if loop_counter % Operator.sensors_period == 0:
+#                try:
+#                    log_hall_sensors()
+#                    log_magnet_temps()
+#                    log_insert_temps()
+#
+
+
         #Transmission Scan:
         timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
         if Operator.transmission_period != 0 and Operator.run_condition:
@@ -64,7 +75,7 @@ def take_data(name):
         if Operator.reflection_period != 0 and Operator.run_condition:
             if loop_counter % Operator.reflection_period == 0:
                 try:
-                    f0_refl,Q_refl,beta = log_reflection_scan(np.float64(Operator.na_fc), np.float64(Operator.na_span))
+                    f0_refl,Q_refl,beta = log_reflection_scan(np.float64(Operator.na_fc), np.float64(Operator.na_span_refl))
                     GUI.beta_tile.set_value(beta)
                     GUI.message_tile.text="Reflection:"+str(timestamp)
                     GUI.update_ui(term)
@@ -129,13 +140,13 @@ def take_data(name):
         #if loop_counter%20==0:
             #log_transmission_scan(np.float64(Operator.widescan_fc), np.float64(Operator.widescan_span), np.float64(Operator.widescan_power), np.float64(Operator.widescan_N_avgs))
         GUI.message_tile.text="run_condition="+str(Operator.run_condition)
-        time.sleep(1)
+        time.sleep(0.5)
         loop_counter = loop_counter+1
         
 
-def sensor_monitoring(name):
-    while True:
-        log_sensors()#different from log_sensor()
+#def sensor_monitoring(name):
+#    while True:
+#        log_sensors()#different from log_sensor()
 
 def run_GUI():
     establish_databases()
