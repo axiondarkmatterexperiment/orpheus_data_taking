@@ -1,6 +1,6 @@
 #Function for motor commands
 from data_taking_functions import log_cavity_params
-from monitoring_functions import log_error
+from monitoring_functions import log_error, update_current_task
 import socket
 import datetime
 import pytz
@@ -71,6 +71,7 @@ def motor_command(IP,command):
         s.close()
 
 def coordinated_motion(dl_cm):#dl_cm is the change in cavity length in cm
+    update_current_task("coordinated_motion")
     #We assume that we begin in an evenly-spaced configuration
     CM_steps = int(dl_cm*steps_per_cm)
     BDP_steps = int(CM_steps*BDP_ratio)
