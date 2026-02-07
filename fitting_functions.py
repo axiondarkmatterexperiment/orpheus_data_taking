@@ -163,3 +163,11 @@ def calculate_coupling(dy_over_C, s11_phase):
     else:
         beta = (1 + Gamma_cav_f0)/(1-Gamma_cav_f0)
     return beta
+
+def cavity_length_from_f0(f0_GHz):
+    a = 0.045
+    b = 15.119
+    c = -1.014
+    d = 31.693
+    length_cm = (-c+2*a*b-np.sqrt((c-2*a*b)**2 - 4*a*(a*b**2+d-f0_GHz)))/(2*a)
+    return length_cm
