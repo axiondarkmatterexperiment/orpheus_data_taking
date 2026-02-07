@@ -8,6 +8,8 @@ class OrpheusOperator:
         VNA_PORT=5025
 
         VNA_TIMEOUT=10
+        #Begin with a true run condition
+        self.run_condition=True
 
         #set the data taking periods to safe starting values:
         self.transmission_period = 1
@@ -23,6 +25,7 @@ class OrpheusOperator:
         
         self.na_fc = str(float(fc)/1e9) #The units for fc is GHz
         self.na_span = str(float(span)/1e9) #The units for span is GHz
+        self.na_span_refl = str(float(span)/2e9) #The reflection fitting usually benefits from narrower windows.
 
         #Initialize the motor variables
         self.dl_cm = 0.0
