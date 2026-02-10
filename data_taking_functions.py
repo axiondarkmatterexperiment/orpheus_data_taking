@@ -74,7 +74,6 @@ def log_digitization(timestamp, freqs, pows):
     cur.close()
     conn.close()
     
-
 #logs either reflection or transmission scans in a separate table for displaying on grafana.
 #Will log the fit as well. Assumes no fit data but if fit is provided it will log it.
 def log_na_scan_for_display(scan_type, timestamp, freqs, pows, fit_pows=[]):
@@ -172,7 +171,6 @@ def switch_rf(setting): #setting values: "transmission", "reflection", "digitize
     write_SCPI(IP_ADDRESS, PORT, TIMEOUT,"SOUR:CHAN:OUTP:STAT " + ch2 + "\n")
 
     return
-
 
 def scan_na(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4):
     #send the query to the VNA:
@@ -272,7 +270,6 @@ def log_transmission_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_
         log_error(timestamp, "empty trans, SCPI timeout likely")
         return np.nan, np.nan
 
-
 def log_reflection_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4, fitting=True, param_logging=True):
     update_current_task("log_reflection_scan")
     switch_rf("reflection")
@@ -369,7 +366,6 @@ def digitize(acquisition_time):
     log_digitization(timestamp, freqs, pows)
     return timestamp, spectrum
 
-    
 def wait_for_digitization():
     IP_ADDRESS = "192.168.25.8"
     PORT = 50000
