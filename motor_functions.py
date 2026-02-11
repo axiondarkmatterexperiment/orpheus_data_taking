@@ -119,7 +119,6 @@ def wait_for_motor(motor_name):#Waits for the motor to stop turning and then ret
             #try exception because before the motion is complete it returns ?6 instead of step number for a few loops.
             try:
                 steps = int(steps)
-                #print("Motion completed. Total steps = " + str(steps))
                 f = False
             except ValueError:
                 f = True
