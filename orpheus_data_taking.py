@@ -136,18 +136,9 @@ def take_data(name):
                     GUI.error_tile.text="tuning: " + str(timestamp)[0:19] + ": " + repr(e)
                     GUI.update_ui(term)
 
-        #Widescan every 20 cycles:
-        #if loop_counter%20==0:
-            #log_transmission_scan(np.float64(Operator.widescan_fc), np.float64(Operator.widescan_span), np.float64(Operator.widescan_power), np.float64(Operator.widescan_N_avgs))
-        GUI.message_tile.text="run_condition="+str(Operator.run_condition)
         time.sleep(0.5)
         loop_counter = loop_counter+1
         
-
-#def sensor_monitoring(name):
-#    while True:
-#        log_sensors()#different from log_sensor()
-
 def run_GUI():
     establish_databases()
     internal_thread = threading.Thread(target=take_data, args=("data_taker",))
@@ -202,11 +193,3 @@ def run_GUI():
 
 run_GUI()
 os.system('clear')
-#establish_databases()
-#thread1 = threading.Thread(target=run_GUI, args=("GUI_runner",))
-#thread2 = threading.Thread(target=take_data, args=("data_taker",))
-#thread3 = threading.Thread(target=take_data, args=("sensor_monitor",))
-
-#thread1.start()
-#thread2.start()
-#thread3.start()
