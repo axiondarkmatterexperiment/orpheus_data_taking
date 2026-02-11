@@ -433,5 +433,3 @@ def tune_while_tracking_mode(initial_f0_GHz, initial_span_GHz, tune_distance_cm,
             print(str(timestamp) + " transmission scan failed or timed out, restarting loop at initial fc of scan and not tuning.")
 
     return j*tune_increment_cm
-
-
