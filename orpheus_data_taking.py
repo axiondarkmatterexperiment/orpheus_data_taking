@@ -13,7 +13,7 @@ from OrpheusGUI import OrpheusGUI
 from OrpheusOperator import OrpheusOperator
 from monitoring_functions import *
 from motor_functions import coordinated_motion
-from data_taking_functions import log_transmission_scan, log_reflection_scan, digitize, set_lo_center_freq, wait_for_digitization
+from data_taking_functions import log_transmission_scan, log_reflection_scan, start_digitization, set_lo_center_freq, wait_for_digitization, log_cavity_params, log_digitization
 import datetime
 import pytz
 import time
@@ -25,7 +25,7 @@ import threading
 
 current_cavity_l = float(np.genfromtxt('cavity_current_length.txt',delimiter=','))
 cavity_lengths_array = np.genfromtxt('cavity_lengths_array.txt',delimiter=',')
-
+steps_per_cm=20000/0.127
 
 term = Terminal()
 GUI=OrpheusGUI()
@@ -36,8 +36,11 @@ def take_data(name):
     #Count the loops to have differing periods for different actions
     tuning_index = 0 #for indexing through the list of cavity lengths, back and forth
     loop_counter = 1
-    tune_forward = True
+    tune_forward = True #This variable will not be necessary if I do not use the array of desired cavity lengths
     Operator.cavity_length = current_cavity_l
+    GUI.cavity_length_tile.set_value(current_cavity_l)
+    GUI.max_cavity_length_tile.set_value(Operator.max_cavity_length)
+    GUI.min_cavity_length_tile.set_value(Operator.min_cavity_length)
     
     while Operator.run_condition:
         #Poll Sensors:
@@ -49,6 +52,13 @@ def take_data(name):
 #                    log_magnet_temps()
 #                    log_insert_temps()
 #
+
+        #Don't do anything if paused:
+        if Operator.pause:
+            GUI.message_tile.text="Data taking paused. Enter command 'unpause' to unpause."
+            GUI.update_ui(term)
+            while Operator.pause:
+                time.sleep(0.5)
 
 
         #Transmission Scan:
@@ -88,53 +98,80 @@ def take_data(name):
         if Operator.digitization_period != 0 and Operator.run_condition:
             if loop_counter % Operator.digitization_period == 0:
                 try:
-                    tx, lo_freq = set_lo_center_freq(float(Operator.na_fc)*1e9)
-                    digitize(30)
+                    lo_set_freq = int(float(Operator.na_fc)*1e9*100)/100 #Set the frequency to a resolution of a hundredth of a Hz. Higher precision is rejected by the LO.
+                    lo_freq = set_lo_center_freq(lo_set_freq)
+                    start_digitization(30)
                     GUI.message_tile.text = "Digitizing at fc = " + str(lo_freq)
-                    GUI.upate_ui(term)
-                    wait_for_digitization()
-                    finish_timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
+                    GUI.update_ui(term)
+                    finish_timestamp, freqs, pows = wait_for_digitization(return_digitization=True)
                     GUI.message_tile.text = "Digitization complete at " + str(finish_timestamp)
                     GUI.update_ui(term)
+                    log_digitization(timestamp, freqs, pows) #I would rather log the start timestamp rather than the finish timestamp
                 except Exception as e:
                     log_error(timestamp, repr(e))
                     GUI.error_tile.text="digitizing: " + str(timestamp)[0:19] + ": " + repr(e)
                     GUI.update_ui(term)
 
+        #This tuning method uses a fixed increment
         #Cavity Tuning:
         timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
-        if Operator.tuning_period != 0 and Operator.run_condition:
+        if Operator.tuning_period != 0 and Operator.run_condition and Operator.dl_cm != 0 and Operator.cavity_length < Operator.max_cavity_length and Operator.cavity_length > Operator.min_cavity_length:
             if loop_counter % Operator.tuning_period == 0:
                 try:
                     GUI.message_tile.text="starting tuning operation " + str(Operator.dl_cm)
                     l_cm = Operator.cavity_length
-                    dl_cm = cavity_lengths_array[tuning_index]-l_cm  
-                    GUI.dl_cm_tile.set_value(dl_cm)
-                    time.sleep(1)
                     GUI.update_ui(term)
                     coordinated_motion(Operator.dl_cm)
-                    Operator.cavity_length = Operator.cavity_length + dl_cm
+                    true_dl_cm = int(steps_per_cm*Operator.dl_cm)/steps_per_cm #Account for the fact that steps are integers and can't achieve exact precision in centimeters
+                    Operator.cavity_length = Operator.cavity_length + true_dl_cm
                     GUI.cavity_length_tile.set_value(Operator.cavity_length)
                     GUI.message_tile.text="done with tuning operation"
                     GUI.update_ui(term)
                     with open('cavity_current_length.txt','w') as output:
                         output.write(str(Operator.cavity_length))
-                    #Determine the direction of tuning. The data taking is set up to scan and re-scan back and forth through the array of cavity lengths.
-                    if tune_forward:
-                        tuning_index = tuning_index + 1
-                    else:
-                        tuning_index = tuning_index - 1
-                    if tuning_index == 0:
-                        tune_forward = True
-                        GUI.tuning_mode_tile.text="Tuning Forward"
-                    if tuning_index == len(cavity_lengths_array)-1:
-                        tune_forward = False
-                        GUI.tuning_mode_tile.text="Tuning Backward"
-                    time.sleep(3)
+                    log_cavity_params("cavity_length_cm", timestamp, Operator.cavity_length)
                 except Exception as e:
                     log_error(timestamp, repr(e))
                     GUI.error_tile.text="tuning: " + str(timestamp)[0:19] + ": " + repr(e)
                     GUI.update_ui(term)
+
+        
+        #This tuning method uses a list of values
+#        #Cavity Tuning:
+#        timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
+#        if Operator.tuning_period != 0 and Operator.run_condition:
+#            if loop_counter % Operator.tuning_period == 0:
+#                try:
+#                    GUI.message_tile.text="starting tuning operation " + str(Operator.dl_cm)
+#                    l_cm = Operator.cavity_length
+#                    dl_cm = cavity_lengths_array[tuning_index]-l_cm  
+#                    GUI.dl_cm_tile.set_value(dl_cm)
+#                    time.sleep(1)
+#                    GUI.update_ui(term)
+#                    coordinated_motion(Operator.dl_cm)
+#                    Operator.cavity_length = Operator.cavity_length + dl_cm
+#                    GUI.cavity_length_tile.set_value(Operator.cavity_length)
+#                    GUI.message_tile.text="done with tuning operation"
+#                    GUI.update_ui(term)
+#                    with open('cavity_current_length.txt','w') as output:
+#                        output.write(str(Operator.cavity_length))
+#                    #Determine the direction of tuning. The data taking is set up to scan and re-scan back and forth through the array of cavity lengths.
+#                    if tune_forward:
+#                        tuning_index = tuning_index + 1
+#                    else:
+#                        tuning_index = tuning_index - 1
+#                    if tuning_index == 0:
+#                        tune_forward = True
+#                        GUI.tuning_mode_tile.text="Tuning Forward"
+#                    if tuning_index == len(cavity_lengths_array)-1:
+#                        tune_forward = False
+#                        GUI.tuning_mode_tile.text="Tuning Backward"
+#                    time.sleep(3)
+#                    log_cavity_params("cavity_length_cm", timestamp, Operator.cavity_length)
+#                except Exception as e:
+#                    log_error(timestamp, repr(e))
+#                    GUI.error_tile.text="tuning: " + str(timestamp)[0:19] + ": " + repr(e)
+#                    GUI.update_ui(term)
 
         time.sleep(0.5)
         loop_counter = loop_counter+1
@@ -152,6 +189,12 @@ def run_GUI():
                 if val.name=="KEY_ENTER":
                     input_str=GUI.input_tile.text
                     GUI.input_tile.text=""
+                    if input_str=="pause":
+                        GUI.message_tile.text="Operator pausing..."
+                        exec("Operator.pause=True")
+                    if input_str=="unpause":
+                        GUI.message_tile.text="Operator unpausing..."
+                        exec("Operator.pause=False")
                     if input_str=="quit":
                         exec("Operator.run_condition=False")
                         GUI.message_tile.text="Operator Shutting Down..."
@@ -179,7 +222,8 @@ def run_GUI():
                         entity_str = input_str[0:input_str.find(',')]
                         val_str = input_str[(input_str.find(',')+1):]
                         #Catalogue of entities:
-                        catalogue = np.asarray(["na_power", "na_fc", "na_span", "dl_cm", "transmission_period", "reflection_period", "tuning_period", "digitization_period"])
+                        catalogue = np.asarray(["na_power", "na_fc", "na_span", "dl_cm", "transmission_period", "reflection_period", 
+                                                "tuning_period", "digitization_period","max_cavity_length", "min_cavity_length"])
                         cat_idx = np.argwhere(catalogue==entity_str)
                         #If an item in the catalogue has been selected, update the DAQ variable, which is always a string
                         if np.size(cat_idx)>0:

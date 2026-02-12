@@ -8,7 +8,8 @@ class OrpheusGUI:
         Operator=OrpheusOperator()
         #Commands catalogue:
         self.catalogue_tile = ListTile(["na_power_trans,<>: (dBm)", "na_power_refl,<>: (dBm)", "na_fc,<>: (GHz)", "na_span,<>: (GHz)",
-                                        "transmission_period,<>: ()","reflection_period,<>: ()","tuning_period,<>: ()"],title="Command Catalogue",rect=(0,0,65,0))
+                                        "transmission_period,<>: ()","reflection_period,<>: ()","tuning_period,<>: ()",
+                                        "max_cavity_length,<>: (cm)","min_cavity_length,<>: (cm)"],title="Command Catalogue",rect=(0,0,65,0))
        
         self.tuning_mode_tile = TextTile("tuning forward",(0,0,35,0),title="tuning mode") 
         #input tile and message tile (on the bottom of the GUI):
@@ -24,8 +25,10 @@ class OrpheusGUI:
         self.Q_tile = ValueTile(0,(0,0,33,4),title="Q_trans")
         self.beta_tile = ValueTile(0,(0,0,34,4),title="beta")
 
-        self.cavity_length_tile = ValueTile(0,(0,0,33,4),title="cavity_length", units="cm")
-        self.dl_cm_tile = ValueTile(0,(0,0,33,4),title="dl_cm",units="cm")
+        self.cavity_length_tile = ValueTile(0,(0,0,25,4),title="cavity_length", units="cm")
+        self.max_cavity_length_tile = ValueTile(0,(0,0,25,4),title="max_cavity_length", units="cm")
+        self.min_cavity_length_tile = ValueTile(0,(0,0,25,4),title="min_cavity_length", units="cm")
+        self.dl_cm_tile = ValueTile(0,(0,0,25,4),title="dl_cm",units="cm")
          
         #Data taking period tiles:
         self.transmission_period_tile = ValueTile(Operator.transmission_period,(0,0,20,4),title="trans period")
@@ -43,7 +46,8 @@ class OrpheusGUI:
                 	       	    self.beta_tile]),
                         HStackTile((0,0,100,4),[self.cavity_length_tile,
                                 self.dl_cm_tile,
-                	       	    self.beta_tile]),
+                	       	    self.max_cavity_length_tile,
+                                self.min_cavity_length_tile]),
                         HStackTile((0,0,100,4),[self.transmission_period_tile,
                                 self.reflection_period_tile,
                 	       	    self.digitization_period_tile,

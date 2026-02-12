@@ -10,6 +10,9 @@ class OrpheusOperator:
         VNA_TIMEOUT=10
         #Begin with a true run condition
         self.run_condition=True
+        self.pause=False
+        self.max_cavity_length=16
+        self.min_cavity_length=13.5
 
         #set the data taking periods to safe starting values:
         self.transmission_period = 1
