@@ -343,9 +343,22 @@ def set_lo_center_freq(center_freq):
     #Check that it has been set properly, return false / zero if not:
     timestamp, f_set = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "FREQ:CW?\n")
     if float(f_set) == center_freq:
-        return f_set
+        return float(f_set)
     else:
         return 0
+
+def start_digitization(acquisition_time):
+    update_current_task("start_digitization")
+    switch_rf("digitizer")
+    IP_ADDRESS = "192.168.25.8"
+    PORT = 50000
+    TIMEOUT=5
+    set_acq_time_string = "SET:ACQUISITION_TIME " + str(acquisition_time) + "\n"
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, set_acq_time_string)
+    time.sleep(0.1)
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "START\n")
+    time.sleep(0.1)
+    return
 
 def digitize(acquisition_time):
     switch_rf("digitizer")
@@ -354,9 +367,10 @@ def digitize(acquisition_time):
     TIMEOUT=5
     set_acq_time_string = "SET:ACQUISITION_TIME " + str(acquisition_time) + "\n"
     write_SCPI(IP_ADDRESS, PORT, TIMEOUT, set_acq_time_string)
-    time.sleep(0.01)
+    time.sleep(0.1)
     write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "START\n")
-    wait_for_digitization()
+    time.sleep(0.1)
+    wait_for_digitization(return_digitization=False)
     timestamp, spectrum = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "GET:LAST_SPECTRUM?\n")
     spectrum = io.StringIO(spectrum)
     spectrum = np.genfromtxt(spectrum,dtype=float,delimiter=None)
@@ -366,7 +380,8 @@ def digitize(acquisition_time):
     log_digitization(timestamp, freqs, pows)
     return timestamp, spectrum
 
-def wait_for_digitization():
+def wait_for_digitization(return_digitization=True):
+    update_current_task("wait_for_digitization")
     IP_ADDRESS = "192.168.25.8"
     PORT = 50000
     TIMEOUT=5
@@ -381,7 +396,14 @@ def wait_for_digitization():
         elif dig_status == "IDLE":
             digitizing = False
         time.sleep(1)
-    return
+
+    if return_digitization:
+        timestamp, spectrum = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "GET:LAST_SPECTRUM?\n")
+        spectrum = io.StringIO(spectrum)
+        spectrum = np.genfromtxt(spectrum,dtype=float,delimiter=None)
+        pows = spectrum.tolist()
+        freqs = np.arange(np.size(pows)).tolist()
+        return timestamp, freqs, pows
 
 def digitize_at_fc(acquisition_time, center_freq):
     set_lo_center_freq(center_freq)

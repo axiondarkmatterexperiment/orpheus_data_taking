@@ -446,9 +446,6 @@ def query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string):
 
     val_raw = recv_bytes.decode()
 
-    socket_connection.shutdown(socket.SHUT_RDWR)
-    socket_connection.close()
-
     return timestamp, val_raw
 
 #Trying an arbitrarily high "master_timeout" which cuts off the while loop if no response is received in that number of seconds
@@ -489,6 +486,4 @@ def write_SCPI(IP_ADDRESS, PORT, SNAP_TIME, SCPI_string):
     OPC_command = "*OPC?\n"
     socket_connection.sendall(OPC_command.encode())
 
-    socket_connection.shutdown(socket.SHUT_RDWR)
-    socket_connection.close()
     return
