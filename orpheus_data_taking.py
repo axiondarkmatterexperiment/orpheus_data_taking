@@ -41,6 +41,8 @@ def take_data(name):
     GUI.cavity_length_tile.set_value(current_cavity_l)
     GUI.max_cavity_length_tile.set_value(Operator.max_cavity_length)
     GUI.min_cavity_length_tile.set_value(Operator.min_cavity_length)
+    GUI.na_transmission_Q_widths_tile.set_value(Operator.na_transmission_Q_widths)
+    GUI.na_reflection_Q_widths_tile.set_value(Operator.na_reflection_Q_widths)
     
     while Operator.run_condition:
         #Poll Sensors:
@@ -55,7 +57,7 @@ def take_data(name):
 
         #Don't do anything if paused:
         if Operator.pause:
-            GUI.message_tile.text="Data taking paused. Enter command 'unpause' to unpause."
+            GUI.message_tile.text="Data taking paused. Enter command 'resume' to unpause."
             GUI.update_ui(term)
             while Operator.pause:
                 time.sleep(0.5)
@@ -66,31 +68,49 @@ def take_data(name):
         if Operator.transmission_period != 0 and Operator.run_condition:
             if loop_counter % Operator.transmission_period == 0:
                 try:
+                    Q_width = float(Operator.na_fc)/Operator.transmission_Q
                     GUI.na_fc_tile.set_value(float(Operator.na_fc))
-                    GUI.na_span_tile.set_value(float(Operator.na_span))
+                    Operator.na_transmission_span = str(Q_width*Operator.na_transmission_Q_widths)
+                    GUI.na_span_tile.set_value(float(Operator.na_transmission_span))
                     GUI.update_ui(term)
-                    f0,Q = log_transmission_scan(np.float64(Operator.na_fc), np.float64(Operator.na_span))
+                    f0,Q = log_transmission_scan(np.float64(Operator.na_fc), np.float64(Operator.na_transmission_span))
                     GUI.Q_tile.set_value(Q)
                     GUI.f0_tile.set_value(f0/1e9)
-                    #Q_width = f0/Q
-                    #Operator.na_span = str(Q_width*Operator.na_Q_widths)
+                    Operator.transmission_Q = Q
+                    Q_width = f0/Q
+                    Operator.na_transmission_span = str(Q_width*Operator.na_transmission_Q_widths)
                     Operator.na_fc = str(f0/1e9)
                     GUI.message_tile.text="Transmission:"+str(timestamp)
                     GUI.update_ui(term)
-                except (TypeError, ZeroDivisionError):
-                    GUI.message_tile.text="Transmission fail" + str(timestamp)
+                #except (TypeError, ZeroDivisionError):
+                #    GUI.message_tile.text="Transmission fail: " + str(timestamp)
+                except Exception as e:
+                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                    log_error(timestamp,repr(e))
+                    GUI.message_tile.text="Transmission fail:"+str(timestamp)
+                    #GUI.error_tile.text=repr(e)
+                    GUI.error_tile.text=(repr(e) + "-- line No. " + str(exc_tb.tb_lineno))
+                    GUI.update_ui(term)
         
         #Reflection Scan:
         timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
         if Operator.reflection_period != 0 and Operator.run_condition:
             if loop_counter % Operator.reflection_period == 0:
                 try:
-                    f0_refl,Q_refl,beta = log_reflection_scan(np.float64(Operator.na_fc), np.float64(Operator.na_span_refl))
+                    Q_width = float(Operator.na_fc)/Operator.transmission_Q
+                    Operator.na_reflection_span = str(Q_width*Operator.na_reflection_Q_widths)
+                    GUI.na_span_tile.set_value(float(Operator.na_reflection_span))
+                    f0_refl,Q_refl,beta = log_reflection_scan(np.float64(Operator.na_fc), np.float64(Operator.na_reflection_span)/2)
                     GUI.beta_tile.set_value(beta)
                     GUI.message_tile.text="Reflection:"+str(timestamp)
                     GUI.update_ui(term)
-                except (TypeError, ZeroDivisionError):
+                #except (TypeError, ZeroDivisionError):
+                except Exception as e:
+                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                    log_error(timestamp,repr(e))
                     GUI.message_tile.text="Reflection fail:"+str(timestamp)
+                    #GUI.error_tile.text=repr(e)
+                    GUI.error_tile.text=(repr(e) + "-- line No. " + str(exc_tb.tb_lineno))
                     GUI.update_ui(term)
         
         #Digitizing:
@@ -192,11 +212,12 @@ def run_GUI():
                     if input_str=="pause":
                         GUI.message_tile.text="Operator pausing..."
                         exec("Operator.pause=True")
-                    if input_str=="unpause":
-                        GUI.message_tile.text="Operator unpausing..."
+                    if input_str=="resume":
+                        GUI.message_tile.text="Operator resuming..."
                         exec("Operator.pause=False")
                     if input_str=="quit":
                         exec("Operator.run_condition=False")
+                        exec("Operator.pause=False") #If you don't do this then it can be stuck in the pause loop and never quit
                         GUI.message_tile.text="Operator Shutting Down..."
                         while internal_thread.is_alive():
                             GUI.message_tile.text="|Operator Shutting Down...|"
@@ -223,7 +244,8 @@ def run_GUI():
                         val_str = input_str[(input_str.find(',')+1):]
                         #Catalogue of entities:
                         catalogue = np.asarray(["na_power", "na_fc", "na_span", "dl_cm", "transmission_period", "reflection_period", 
-                                                "tuning_period", "digitization_period","max_cavity_length", "min_cavity_length"])
+                                                "tuning_period", "digitization_period","max_cavity_length", "min_cavity_length",
+                                                "na_transmission_Q_widths", "na_reflection_Q_widths"])
                         cat_idx = np.argwhere(catalogue==entity_str)
                         #If an item in the catalogue has been selected, update the DAQ variable, which is always a string
                         if np.size(cat_idx)>0:

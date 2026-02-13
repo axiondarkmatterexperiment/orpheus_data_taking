@@ -9,7 +9,8 @@ class OrpheusGUI:
         #Commands catalogue:
         self.catalogue_tile = ListTile(["na_power_trans,<>: (dBm)", "na_power_refl,<>: (dBm)", "na_fc,<>: (GHz)", "na_span,<>: (GHz)",
                                         "transmission_period,<>: ()","reflection_period,<>: ()","tuning_period,<>: ()",
-                                        "max_cavity_length,<>: (cm)","min_cavity_length,<>: (cm)"],title="Command Catalogue",rect=(0,0,65,0))
+                                        "max_cavity_length,<>: (cm)","min_cavity_length,<>: (cm)","na_transmission_Q_widths,<>: ()",
+                                        "na_reflection_Q_widths,<>: ()"],title="Command Catalogue",rect=(0,0,65,0))
        
         self.tuning_mode_tile = TextTile("tuning forward",(0,0,35,0),title="tuning mode") 
         #input tile and message tile (on the bottom of the GUI):
@@ -25,6 +26,9 @@ class OrpheusGUI:
         self.Q_tile = ValueTile(0,(0,0,33,4),title="Q_trans")
         self.beta_tile = ValueTile(0,(0,0,34,4),title="beta")
 
+        self.na_transmission_Q_widths_tile = ValueTile(0,(0,0,50,4),title="transmission Q widths")
+        self.na_reflection_Q_widths_tile = ValueTile(0,(0,0,50,4),title="reflection Q widths")
+
         self.cavity_length_tile = ValueTile(0,(0,0,25,4),title="cavity_length", units="cm")
         self.max_cavity_length_tile = ValueTile(0,(0,0,25,4),title="max_cavity_length", units="cm")
         self.min_cavity_length_tile = ValueTile(0,(0,0,25,4),title="min_cavity_length", units="cm")
@@ -36,7 +40,7 @@ class OrpheusGUI:
         self.digitization_period_tile = ValueTile(Operator.digitization_period,(0,0,20,4),title="digit period")
         self.tuning_period_tile = ValueTile(Operator.tuning_period,(0,0,20,4),title="tuning period")
         self.widescan_period_tile = ValueTile(Operator.widescan_period,(0,0,20,4),title="widescan period")
-
+        
         self.ui=VStackTile((0,0,100,52),[HStackTile((0,0,100,12),[self.tuning_mode_tile,self.catalogue_tile]),
                         HStackTile((0,0,100,4),[self.na_power_tile,
                                 self.na_fc_tile,
@@ -44,6 +48,8 @@ class OrpheusGUI:
                         HStackTile((0,0,100,4),[self.f0_tile,
                                 self.Q_tile,
                 	       	    self.beta_tile]),
+                        HStackTile((0,0,100,4),[self.na_transmission_Q_widths_tile,
+                                self.na_reflection_Q_widths_tile]),
                         HStackTile((0,0,100,4),[self.cavity_length_tile,
                                 self.dl_cm_tile,
                 	       	    self.max_cavity_length_tile,
