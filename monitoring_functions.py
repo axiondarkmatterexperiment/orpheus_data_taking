@@ -10,8 +10,8 @@ import psycopg2
 import socket
 import datetime
 import pytz
-#                                 side A temp, side B temp, hall 1, hall 2,  hall 3,   hall 4,  outside of can temp sensor
-from calibration_functions import SN_U04844, SN_X201099, SN_68179, SN_68253, SN_64753, SN_67247, PT_100
+#                                 side A temp, side B temp, hall 1, hall 2,  hall 3,   hall 4,   curved mirror, dielectric and hfet temp sensors, flat mirror temp sensor,  outside can temp sensor
+from calibration_functions import SN_U04844, SN_X201099, SN_68179, SN_68253, SN_64753, SN_67247, RUOX_202A,                                        SN_X83781,                PT_100
 
 def log_sensors():
     log_magnet_temps()
@@ -184,21 +184,35 @@ def log_insert_temps():
     IP_ADDRESS="192.168.25.11"
     PORT=1234
     TIMEOUT=5
-    MEAS_HFET = "MEAS:FRES? (@XXX)\n"
-    MEAS_FLAT = "MEAS:FRES? (@XXX)\n"
-    MEAS_DIEL = "MEAS:FRES? (@XXX)\n"
-    MEAS_CURV = "MEAS:FRES? (@XXX)\n"
+    MEAS_CURV = "MEAS:FRES? (@103)\n"
+    MEAS_DIEL = "MEAS:FRES? (@104)\n"
+    MEAS_FLAT = "MEAS:FRES? (@105)\n"
+    MEAS_HFET = "MEAS:FRES? (@109)\n"
     
-    timestamp_hfet, val_raw_hfet = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, MEAS_HFET)
-    timestamp_flat, val_raw_flat = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, MEAS_FLAT)
     timestamp_diel, val_raw_diel = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, MEAS_DIEL)
     timestamp_curv, val_raw_curv = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, MEAS_CURV)
+    timestamp_flat, val_raw_flat = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, MEAS_FLAT)
+    timestamp_hfet, val_raw_hfet = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, MEAS_HFET)
     
-    val_raw_hfet = float(val_raw_hfet)
-    val_raw_flat = float(val_raw_flat)
-    val_raw_diel = float(val_raw_diel)
     val_raw_curv = float(val_raw_curv)
+    val_raw_diel = float(val_raw_diel)
+    val_raw_flat = float(val_raw_flat)
+    val_raw_hfet = float(val_raw_hfet)
 
+    sensor_name_curv = "curved_mirror_temp"
+    sensor_name_diel = "dielectric_plate_temp"
+    sensor_name_flat = "flat_mirror_temp"
+    sensor_name_hfet = "HFET_temp"
+
+    val_cal_curv = RUOX_202A(val_raw_curv)
+    val_cal_diel = RUOX_202A(val_raw_diel)
+    val_cal_flat = SN_X83781(val_raw_flat)
+    val_cal_hfet = RUOX_202A(val_raw_hfet)
+
+    log_sensor(sensor_name_curv, timestamp_curv, val_raw_curv, val_cal_curv)
+    log_sensor(sensor_name_diel, timestamp_diel, val_raw_diel, val_cal_diel)
+    log_sensor(sensor_name_flat, timestamp_flat, val_raw_flat, val_cal_flat)
+    log_sensor(sensor_name_hfet, timestamp_hfet, val_raw_hfet, val_cal_hfet)
 
 def log_magnet_temps():
     update_current_task('logging magnet temperatures')
@@ -290,7 +304,7 @@ def log_hall_sensors():
     log_sensor(sensor_name_hall_sensor, timestamp_hall_sensor, val_raw_hall_sensor, val_cal_hall_sensor)
 
     #Hall sensor 3
-    HALL_SENSOR_SCPI = "MEAS:VOLT? (@103)\n" #Should I specify the resolution and whatever? Check documentation
+    HALL_SENSOR_SCPI = "MEAS:VOLT? (@111)\n" #Should I specify the resolution and whatever? Check documentation
     timestamp_hall_sensor, val_raw_hall_sensor = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, HALL_SENSOR_SCPI)
     val_raw_hall_sensor = float(val_raw_hall_sensor)
     sensor_name_hall_sensor = "hall_sensor_3"
@@ -298,7 +312,7 @@ def log_hall_sensors():
     log_sensor(sensor_name_hall_sensor, timestamp_hall_sensor, val_raw_hall_sensor, val_cal_hall_sensor)
    
     #Hall sensor 4
-    HALL_SENSOR_SCPI = "MEAS:VOLT? (@104)\n" #Should I specify the resolution and whatever? Check documentation
+    HALL_SENSOR_SCPI = "MEAS:VOLT? (@112)\n" #Should I specify the resolution and whatever? Check documentation
     timestamp_hall_sensor, val_raw_hall_sensor = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, HALL_SENSOR_SCPI)
     val_raw_hall_sensor = float(val_raw_hall_sensor)
     sensor_name_hall_sensor = "hall_sensor_4"
