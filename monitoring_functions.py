@@ -1,5 +1,4 @@
-#Log sensor values to the magnet_monitoring table
-#assumes table is already made
+#Log sensor values to the experiment_monitoring table
 import sys
 import os
 
@@ -16,7 +15,7 @@ from calibration_functions import SN_U04844, SN_X201099, SN_68179, SN_68253, SN_
 def log_sensors():
     log_magnet_temps()
     log_outside_can_temp()
-    log_resistor_dewar_bottom()
+    log_resonator_temps()
     log_LHe_level()
     log_hall_sensors() #I would like to keep all four hall sensors. Two on the top and two on the bottom. This is to test error in sensor values which the magnet test indicated.
                         # So I will need to have pairs of sensors at the same location, and pair the axial hall sensors with the rectangular ones.
@@ -179,7 +178,8 @@ def log_sensor(sensor_name, timestamp, val_raw, val_cal ):
     cur.close()
     conn.close()
 
-def log_insert_temps():
+#Log the curved mirror, dielectric plate, flat mirror, and HFET temperatures
+def log_resonator_temps():
     update_current_task('logging insert temperatures')
     IP_ADDRESS="192.168.25.11"
     PORT=1234
@@ -295,13 +295,13 @@ def log_hall_sensors():
     val_cal_hall_sensor = SN_68179(val_raw_hall_sensor) #nonsense placeholder for right now. Will drop the table before putting in real values.
     log_sensor(sensor_name_hall_sensor, timestamp_hall_sensor, val_raw_hall_sensor, val_cal_hall_sensor)
 
-    #Hall sensor 2
-    HALL_SENSOR_SCPI = "MEAS:VOLT? (@102)\n" #Should I specify the resolution and whatever? Check documentation
-    timestamp_hall_sensor, val_raw_hall_sensor = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, HALL_SENSOR_SCPI)
-    val_raw_hall_sensor = float(val_raw_hall_sensor)
-    sensor_name_hall_sensor = "hall_sensor_2"
-    val_cal_hall_sensor = SN_68253(val_raw_hall_sensor) #nonsense placeholder for right now. Will drop the table before putting in real values.
-    log_sensor(sensor_name_hall_sensor, timestamp_hall_sensor, val_raw_hall_sensor, val_cal_hall_sensor)
+    ##Hall sensor 2
+    #HALL_SENSOR_SCPI = "MEAS:VOLT? (@102)\n" #Should I specify the resolution and whatever? Check documentation
+    #timestamp_hall_sensor, val_raw_hall_sensor = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, HALL_SENSOR_SCPI)
+    #val_raw_hall_sensor = float(val_raw_hall_sensor)
+    #sensor_name_hall_sensor = "hall_sensor_2"
+    #val_cal_hall_sensor = SN_68253(val_raw_hall_sensor) #nonsense placeholder for right now. Will drop the table before putting in real values.
+    #log_sensor(sensor_name_hall_sensor, timestamp_hall_sensor, val_raw_hall_sensor, val_cal_hall_sensor)
 
     #Hall sensor 3
     HALL_SENSOR_SCPI = "MEAS:VOLT? (@111)\n" #Should I specify the resolution and whatever? Check documentation
