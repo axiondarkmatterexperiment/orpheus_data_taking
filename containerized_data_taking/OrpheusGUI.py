@@ -3,6 +3,7 @@ from OrpheusOperator import OrpheusOperator
 import numpy as np
 from blessed import Terminal
 import requests
+import sys
 
 class OrpheusGUI:
     def __init__(self):
@@ -68,20 +69,17 @@ class OrpheusGUI:
     def initialize_ui(self):
         self.message_tile.text="Welcome to Orpheus data taking"
 
-    def get_attribute(entity_str):
-        url = "http://localhost:8000/get?keys=" + entity_str
-        return requests.get(url).json()[entity_str]
-
     def update_ui(self, terminal):
         directory= dir(self)
         for item in directory:
-            if item[-5:]=='_tile':
-                item_str = item[0:-5] #cut off _tile at the end of it
-                try:
-                    val = get_attribute(item_str)
-                    update_value_tile(item_str,val)
-                except Exception as e:
-                    pass
+            try:
+                url = "http://localhost:8000/get?keys="+item[0:-5]
+                val = requests.get(url).json()[item[0:-5]]
+                exec("self."+item+".set_value("+str(val)+")")
+            except Exception as e:
+                #exc_type, exc_obj, exc_tb = sys.exc_info()
+                #self.error_tile.text=(repr(e) + "-- line No. " + str(exc_tb.tb_lineno))
+                pass
         self.ui.draw(terminal)
 
     def update_value_tile(self,entity_str,value):
