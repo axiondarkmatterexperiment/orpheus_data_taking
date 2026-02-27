@@ -1,0 +1,1 @@
+The files used are main.py, take_data.py, control_api.py, and terminal_gui.py. The first runs the take_data app and the API, the next two are those just mentioned, and the last is a GUI that sits outside of the container and interacts with the experiment via a python object called state and an API.
