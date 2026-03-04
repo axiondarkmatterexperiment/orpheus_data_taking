@@ -19,16 +19,16 @@ class OrpheusGUI:
        
         self.tuning_mode_tile = TextTile("tuning forward",(0,0,35,0),title="tuning mode") 
         #input tile and message tile (on the bottom of the GUI):
-        self.input_tile = TextEntryTile("",(0,0,35,4),title="command input:")
-        self.message_tile = TextTile("",(0,0,65,4),title="Message")	
+        self.input_tile = TextEntryTile("",(0,0,100,4),title="command input:")
+        self.message_tile = TextTile("",(0,0,100,4),title="Message")	
         self.error_msg_tile = TextTile("",(0,0,100,4),title="Most recent error:")
 
         #values display:
         self.na_power_tile = ValueTile(float(Operator.na_power),(0,0,33,4),title="NA Power", units="dBm")
         self.na_fc_tile = ValueTile(float(Operator.na_fc)/1e9,(0,0,33,4),title="NA fc", units="GHz")
         self.na_span_tile = ValueTile(float(Operator.na_span)/1e9,(0,0,34,4),title="NA span", units="GHz")
-        self.f0_tile = ValueTile(0,(0,0,33,4),title="f0_trans", units="GHz")
-        self.Q_tile = ValueTile(0,(0,0,33,4),title="Q_trans")
+        self.transmission_f0_tile = ValueTile(0,(0,0,33,4),title="f0_trans", units="GHz")
+        self.transmission_Q_tile = ValueTile(0,(0,0,33,4),title="Q_trans")
         self.beta_tile = ValueTile(0,(0,0,34,4),title="beta")
 
         self.na_transmission_Q_widths_tile = ValueTile(0,(0,0,50,4),title="transmission Q widths")
@@ -50,8 +50,8 @@ class OrpheusGUI:
                         HStackTile((0,0,100,4),[self.na_power_tile,
                                 self.na_fc_tile,
                 	       	    self.na_span_tile]),
-                        HStackTile((0,0,100,4),[self.f0_tile,
-                                self.Q_tile,
+                        HStackTile((0,0,100,4),[self.transmission_f0_tile,
+                                self.transmission_Q_tile,
                 	       	    self.beta_tile]),
                         HStackTile((0,0,100,4),[self.na_transmission_Q_widths_tile,
                                 self.na_reflection_Q_widths_tile]),
@@ -64,8 +64,8 @@ class OrpheusGUI:
                 	       	    self.digitization_period_tile,
                                 self.tuning_period_tile,
                                 self.widescan_period_tile]),
-                        HStackTile((0,0,100,4),[self.input_tile,
-                                self.message_tile]),
+                        HStackTile((0,0,100,4),[self.input_tile]),
+                        HStackTile((0,0,100,4),[self.message_tile]),
                         HStackTile((0,0,100,4),[self.error_msg_tile])])#,
         
 

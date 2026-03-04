@@ -1,0 +1,12 @@
+services:
+  app:
+    build: .
+    image: orpheus
+    container_name: orpheus-experiment-engine
+    ports:
+      - "8000:8000"   # host:container
+    volumes:
+      - ./current_cavity_length.txt:/app/current_cavity_length.txt
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped

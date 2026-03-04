@@ -32,12 +32,6 @@ def run_GUI():
         while True:
             #if loop_counter%10==0: #If I do it every time it slows down the GUI significantly
             GUI.update_all_tiles(term)
-            #GUI.message_tile.text="yo"
-            #GUI.update_ui(term)
-            #time.sleep(0.1)
-            #GUI.message_tile.text="yooo"
-            #GUI.update_ui(term)
-            #time.sleep(0.1)
             val=term.inkey(timeout=0.1)
             if val:
                 if val.name=="KEY_ENTER":
@@ -54,7 +48,13 @@ def run_GUI():
                         requests.post("http://localhost:8000/set",
                                       json={"pause": False}
                                       )
-                        
+
+                    elif input_str=="exit":
+                        GUI.message_tile.text="Closing GUI, leaving experiment as is..."
+                        GUI.update_ui(term)
+                        time.sleep(1.5)
+                        break
+
                     elif input_str=="quit":
                         requests.post("http://localhost:8000/set",
                                       json={"run_condition": False}
@@ -109,4 +109,3 @@ def run_GUI():
     term.exit_fullscreen()
 
 run_GUI()
-os.system('clear')
