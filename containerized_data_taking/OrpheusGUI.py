@@ -4,6 +4,9 @@ import numpy as np
 from blessed import Terminal
 import requests
 import sys
+import datetime
+import pytz
+from monitoring_functions import log_error
 
 class OrpheusGUI:
     def __init__(self):
@@ -18,7 +21,7 @@ class OrpheusGUI:
         #input tile and message tile (on the bottom of the GUI):
         self.input_tile = TextEntryTile("",(0,0,35,4),title="command input:")
         self.message_tile = TextTile("",(0,0,65,4),title="Message")	
-        self.error_tile = TextTile("",(0,0,100,4),title="Most recent error:")
+        self.error_msg_tile = TextTile("",(0,0,100,4),title="Most recent error:")
 
         #values display:
         self.na_power_tile = ValueTile(float(Operator.na_power),(0,0,33,4),title="NA Power", units="dBm")
@@ -63,23 +66,27 @@ class OrpheusGUI:
                                 self.widescan_period_tile]),
                         HStackTile((0,0,100,4),[self.input_tile,
                                 self.message_tile]),
-                        HStackTile((0,0,100,4),[self.error_tile])])#,
+                        HStackTile((0,0,100,4),[self.error_msg_tile])])#,
         
 
     def initialize_ui(self):
         self.message_tile.text="Welcome to Orpheus data taking"
 
-    def update_ui(self, terminal):
-        directory= dir(self)
+    def update_all_tiles(self, terminal):
+        directory = dir(self)
+        dictionary = requests.get("http://localhost:8000/dict").json()
         for item in directory:
-            try:
-                url = "http://localhost:8000/get?keys="+item[0:-5]
-                val = requests.get(url).json()[item[0:-5]]
-                exec("self."+item+".set_value("+str(val)+")")
-            except Exception as e:
-                #exc_type, exc_obj, exc_tb = sys.exc_info()
-                #self.error_tile.text=(repr(e) + "-- line No. " + str(exc_tb.tb_lineno))
-                pass
+            if item[-5:]=='_tile':
+                try:
+                    val = dictionary[item[0:-5]]
+                    exec("self."+item+".set_value("+str(val)+")")
+                except Exception as e:
+                    pass
+        self.message_tile.text=dictionary['last_task']
+        self.error_msg_tile.text=dictionary['error_msg']
+        self.ui.draw(terminal)
+
+    def update_ui(self, terminal):
         self.ui.draw(terminal)
 
     def update_value_tile(self,entity_str,value):

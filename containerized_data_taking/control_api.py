@@ -10,6 +10,12 @@ def get_status():
     with state.lock:
         return state.__dict__
 
+#This is to return the dictionary but I have separately defined this list to exclude the lock, which cannot be JSON serialized.
+@app.get("/dict")
+def get_dict():
+    with state.lock:
+        return state.to_dict()
+
 @app.get("/na_fc")
 def get_na_fc():
     with state.lock:
