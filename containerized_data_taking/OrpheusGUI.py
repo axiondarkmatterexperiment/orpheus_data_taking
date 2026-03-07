@@ -12,7 +12,7 @@ class OrpheusGUI:
     def __init__(self):
         Operator=OrpheusOperator()
         #Commands catalogue:
-        self.catalogue_tile = ListTile(["na_power_trans,<>: (dBm)", "na_power_refl,<>: (dBm)", "na_fc,<>: (GHz)", "na_span,<>: (GHz)",
+        self.catalogue_tile = ListTile(["na_power_trans,<>: (dBm)", "na_power_refl,<>: (dBm)", "na_fc,<>: (GHz)", "na_span,<>: (GHz)", "transmission_Q,<>: ()",
                                         "transmission_period,<>: ()","reflection_period,<>: ()","tuning_period,<>: ()",
                                         "max_cavity_length,<>: (cm)","min_cavity_length,<>: (cm)","na_transmission_Q_widths,<>: ()",
                                         "na_reflection_Q_widths,<>: ()"],title="Command Catalogue",rect=(0,0,65,0))
@@ -46,7 +46,7 @@ class OrpheusGUI:
         self.tuning_period_tile = ValueTile(Operator.tuning_period,(0,0,20,4),title="tuning period")
         self.widescan_period_tile = ValueTile(Operator.widescan_period,(0,0,20,4),title="widescan period")
         
-        self.ui=VStackTile((0,0,100,52),[HStackTile((0,0,100,12),[self.tuning_mode_tile,self.catalogue_tile]),
+        self.ui=VStackTile((0,0,100,55),[HStackTile((0,0,100,15),[self.tuning_mode_tile,self.catalogue_tile]),
                         HStackTile((0,0,100,4),[self.na_power_tile,
                                 self.na_fc_tile,
                 	       	    self.na_span_tile]),
@@ -74,7 +74,16 @@ class OrpheusGUI:
 
     def update_all_tiles(self, terminal):
         directory = dir(self)
-        dictionary = requests.get("http://localhost:8000/dict").json()
+        try:
+            dictionary = requests.get("http://localhost:8000/dict").json()
+            self.message_tile.text=dictionary['last_task']
+            self.error_msg_tile.text=dictionary['error_msg']
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
+            self.error_msg_tile.text = "OrpheusGUI error: "+ repr(e) + "--line No. " + str(exc_tb.tb_lineno)
+            self.ui.draw(terminal)
+            return
         for item in directory:
             if item[-5:]=='_tile':
                 try:
@@ -82,8 +91,6 @@ class OrpheusGUI:
                     exec("self."+item+".set_value("+str(val)+")")
                 except Exception as e:
                     pass
-        self.message_tile.text=dictionary['last_task']
-        self.error_msg_tile.text=dictionary['error_msg']
         self.ui.draw(terminal)
 
     def update_ui(self, terminal):

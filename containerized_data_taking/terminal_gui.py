@@ -52,7 +52,7 @@ def run_GUI():
                     elif input_str=="exit":
                         GUI.message_tile.text="Closing GUI, leaving experiment as is..."
                         GUI.update_ui(term)
-                        time.sleep(1.5)
+                        time.sleep(1.2)
                         break
 
                     elif input_str=="quit":
@@ -91,7 +91,7 @@ def run_GUI():
                     else:
                         entity_str = input_str[0:input_str.find(',')]
                         #Catalogue of entities:
-                        catalogue = np.asarray(["na_power", "na_fc", "na_span", "dl_cm", "transmission_period", "reflection_period", 
+                        catalogue = np.asarray(["na_power", "na_fc", "na_span", "transmission_Q", "dl_cm", "transmission_period", "reflection_period", 
                                                 "tuning_period", "digitization_period","max_cavity_length", "min_cavity_length",
                                                 "na_transmission_Q_widths", "na_reflection_Q_widths"])
                         cat_idx = np.argwhere(catalogue==entity_str)

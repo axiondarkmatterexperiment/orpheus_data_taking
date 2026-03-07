@@ -1,6 +1,8 @@
 from state import state
 from data_taking_functions import *
+from fitting_functions import f0_from_cavity_length
 from motor_functions import coordinated_motion
+from monitoring_functions import *
 import time
 import sys
 steps_per_cm = 20000/0.127
@@ -14,8 +16,26 @@ def take_data():
             pause = state.pause
         if pause:
             state.last_task = "Experiment runner is paused"
+        
+        ##Scan all sensors:
+        ##1- check the latest updated value of the period of the action and check if data taker has requested shut-down:
+        #with state.lock:
+        #    run_condition = state.run_condition
+        #    pause = state.pause
+        #    
+        ##2- take action if requirements are met
+        #if pause == False:
+        #    try:
+        #        timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
+        #        log_sensors()
+        #        last_task = "sensors:"+str(timestamp)
+        #    except Exception as e:
+        #        exc_type, exc_obj, exc_tb = sys.exc_info()
+        #        log_error(timestamp, repr(e) + "--line No." + str(exc_tb.tb_lineno))
+        #        state.error_msg = repr(e) + "--line No. " + str(exc_tb.tb_lineno)
 
-        #Prototypical data taking action structure:
+
+        #Transmission scan:
         #1- check the latest updated value of the period of the action and check if data taker has requested shut-down:
         with state.lock:
             transmission_period = state.transmission_period
@@ -32,6 +52,10 @@ def take_data():
             try:
                 Q_width = na_fc/transmission_Q
                 na_span = Q_width*na_transmission_Q_widths
+                #wider window without param logging just to search for the peak
+                na_fc, trash_Q = log_transmission_scan(na_fc,1.5*na_span,fitting=True,param_logging=False)
+                na_fc = na_fc/1e9
+                #regular window with param logging to measure Q
                 na_fc, transmission_Q = log_transmission_scan(na_fc, na_span)
                 timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
                 last_task = "Transmission:"+str(timestamp)
@@ -42,12 +66,13 @@ def take_data():
                     state.transmission_Q = float(transmission_Q)
                     state.na_span = float(na_span)
                     state.last_task = last_task
+                    state.update_json()
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 log_error(timestamp, repr(e) + "--line No." + str(exc_tb.tb_lineno))
                 state.error_msg = repr(e) + "--line No. " + str(exc_tb.tb_lineno)
             
-        #reflection scan:
+        #Reflection scan:
         #1- check the latest updated value of the period of the action and check if data taker has requested shut-down:
         with state.lock:
             reflection_period = state.reflection_period
@@ -71,6 +96,7 @@ def take_data():
                     state.na_fc = float(na_fc/1e9)
                     state.beta = float(beta)
                     state.last_task = last_task
+                    state.update_json()
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 log_error(timestamp, repr(e) + "--line No." + str(exc_tb.tb_lineno))
@@ -135,18 +161,56 @@ def take_data():
                     last_task = "Tuning finished:"+str(timestamp)
                     #Update cavity length variable
                     cavity_length = cavity_length + true_dl_cm
+                    log_cavity_params('cavity_length_cm', timestamp, cavity_length)
                     #Update state object:
                     with state.lock:
                         state.cavity_length = float(cavity_length)
                         state.last_task = last_task
+                        state.update_json()
                     #Update the hard-written file that keeps track of the current length of the cavity
-                    with open('cavity_current_length.txt', 'w') as f:
-                        f.write(str(cavity_length))
+                    #with open('data/cavity_current_length.txt', 'w') as f:
+                    #    f.write(str(cavity_length))
+
+                #conditions for turning around the cavity tuning motion
+                elif cavity_length > max_cavity_length and dl_cm > 0:
+                    #First get past the backlash, which is about 1000 steps (measured in ELog 1166)
+                    coordinated_motion(-1000/steps_per_cm) #Backlash is about 1000 steps
+                    #now re-enter the tuning range:
+                    coordinated_motion(max_cavity_length - cavity_length - 0.01) #Return to the upper limit of the tuning range, with an extra nudge to ensure we don't get stuck outside of it.
+                    cavity_length = max_cavity_length - 0.01
+                    log_cavity_params('cavity_length_cm', timestamp, cavity_length)
+                    estimated_f0 = f0_from_cavity_length(max_cavity_length - 0.01) #This function returns the estimated f0 in GHz. It is based on room temp measurements, though. It has about 10 MHz accuracy.
+                    timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
+                    last_task = "turning around:"+str(timestamp)
+                    with state.lock:
+                        state.cavity_length = float(cavity_length)
+                        state.dl_cm = -dl_cm #Turns the cavity tuning around
+                        state.na_fc = estimated_f0
+                        state.last_task = last_task
+                        state.update_json()
+                elif cavity_length < min_cavity_length and dl_cm < 0:
+                    #First get past the backlash, which is about 1000 steps (measured in ELog 1166)
+                    coordinated_motion(1000/steps_per_cm) #Backlash is about 1000 steps
+                    #now re-enter the tuning range:
+                    coordinated_motion(min_cavity_length - cavity_length + 0.01) #Return to the lower limit of the tuning range, with an extra nudge to ensure we don't get stuck outside of it.
+                    cavity_length = min_cavity_length + 0.01
+                    log_cavity_params('cavity_length_cm', timestamp, cavity_length)
+                    estimated_f0 = f0_from_cavity_length(min_cavity_length + 0.01) #This function returns the estimated f0 in GHz. It is based on room temp measurements, though. It has about 10 MHz accuracy.
+                    timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
+                    last_task = "turning around:"+str(timestamp)
+                    with state.lock:
+                        state.cavity_length = float(cavity_length)
+                        state.dl_cm = -dl_cm #Turns the cavity tuning around
+                        state.na_fc = estimated_f0
+                        state.last_task = last_task
+                        state.update_json()
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 log_error(timestamp, repr(e) + "--line No." + str(exc_tb.tb_lineno))
                 state.error_msg = repr(e) + "--line No. " + str(exc_tb.tb_lineno)
 
-
-        loop_counter = loop_counter + 1
+        with state.lock:
+            pause = state.pause
+        if pause == False:
+            loop_counter = loop_counter + 1
     state.run_status=False

@@ -1,0 +1,17 @@
+{
+    "na_fc": 16.110145386538118,
+    "na_span": 0.03549270864880174,
+    "transmission_Q": NaN,
+    "transmission_f0": NaN,
+    "beta": 0.21115718238459508,
+    "dl_cm": 0.01,
+    "transmission_period": 1.0,
+    "reflection_period": 1.0,
+    "tuning_period": 5.0,
+    "digitization_period": 0,
+    "cavity_length": 14.801554500000014,
+    "min_cavity_length": 13.7,
+    "max_cavity_length": 15.2,
+    "na_transmission_Q_widths": 7,
+    "na_reflection_Q_widths": 5
+}

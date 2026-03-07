@@ -113,8 +113,12 @@ class TextTile(BorderedTile):
         textline=" "*(self.rect[2]-2)
         textline_array=list(textline)
         text_start=(self.rect[2]-2-len(self.text))//2
-        for i in range(0,len(self.text)):
-            textline_array[i+text_start]=self.text[i]
+        if len(self.text)<=len(textline_array)-text_start:
+            for i in range(0,len(self.text)):
+                textline_array[i+text_start]=self.text[i]
+        elif len(self.text)>len(textline_array)-text_start:
+            for i in range(0,len(textline_array)-text_start):
+                textline_array[i+text_start]=self.text[i]
         textline="".join(textline_array)
         center_y=self.rect[1]+(self.rect[3]+1)//2
         print(term.move_xy(self.rect[0]+1,center_y)+textline,end="",flush=True)

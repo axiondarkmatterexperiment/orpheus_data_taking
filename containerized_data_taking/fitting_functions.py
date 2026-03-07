@@ -171,6 +171,15 @@ def cavity_length_from_f0(f0_GHz):
     length_cm = a*f0_GHz + b
     return length_cm
 
+def f0_from_cavity_length(length_cm):
+    #a = -1.27314237
+    #b = 35.30116348
+    #f0_GHz = length_cm/a + b/a
+    a = -0.78544182
+    b = 27.72734841
+    f0_GHz = a*length_cm + b 
+    return f0_GHz
+
 ##This uses the fit I made from the simulation of the cavity
 #def cavity_length_from_f0(f0_GHz):
 #    a = 0.045
