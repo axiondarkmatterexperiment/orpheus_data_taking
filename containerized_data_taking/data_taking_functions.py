@@ -196,6 +196,10 @@ def scan_na(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4):
             )
     write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_setup)
 
+    #Request the calculated sweep time:
+    throwaway_timestamp, sweep_duration = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "SENS1:SWE:TIME?\n")
+    time.sleep(float(sweep_duration)*n_avgs)
+
     #Trigger configuration:
     write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "TRIG:SOUR BUS\n")
     #Start sweep:
