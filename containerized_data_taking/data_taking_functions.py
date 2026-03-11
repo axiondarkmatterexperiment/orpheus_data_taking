@@ -178,35 +178,30 @@ def scan_na(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4):
     PORT=5025
     TIMEOUT=5 #This might need to be changed dependent on the averaging time
 
-    #Sweep setup
-    SCPI_string = "SENS1:FREQ:CENT " + str(f_center_GHz*1e9) + "\n"
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-    SCPI_string = "SENS1:FREQ:SPAN " + str(f_span_GHz*1e9) + "\n"
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-    SCPI_string = "SOUR:POW " + str(na_power) + "\n"
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    f_center = f_center_GHz*1e9
+    f_span = f_span_GHz*1e9
 
-    #Averaging
-    SCPI_string = "SENS1:AVER:COUNT " + str(n_avgs) + "\n"
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-    SCPI_string = "TRIG:AVER ON\n" 
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-    SCPI_string = "TRIG:AVER:CLE\n"#Clears and restarts the averaging of the measurement data
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-    SCPI_string = "SENS1:BAND " + str(if_bw_Hz) + "\n"
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-    
-    #Triggering
-    SCPI_string = "INIT1\n" #sets trigger to single
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-    SCPI_string = "TRIG:SOUR BUS\n" #sets trigger source to bus
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-    SCPI_string = "TRIG\n" #triggers the measurement
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-    
-    #Wait for measurement to finish
-    SCPI_string = "*OPC?\n" #triggers the measurement
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    #Stop any sweep
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "ABOR; INIT1:CONT OFF\n")
+
+    #Configure for the measurement
+    SCPI_setup = (
+            f"SENS1:FREQ:CENT {f_center};"
+            f"SENS1:FREQ:SPAN {f_span};"
+            f"SOUR:POW {na_power};"
+            f"SENS1:BAND {if_bw_Hz};"
+            f"SENS1:AVER ON;"
+            f"SENS1:AVER:COUNT {n_avgs};"
+            f"SENS1:AVER:CLE\n"
+            )
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_setup)
+
+    #Trigger configuration:
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "TRIG:SOUR BUS\n")
+    #Start sweep:
+    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "INIT1\n")
+    #Wait for completion
+    timestamp, opc = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "*OPC?\n")
     
     #Take scan data
     SCPI_string = "CALC1:DATA:SDAT?\n" #ask for the IQ data. Format: n*2-1 is real, n*2 is imaginary
@@ -324,7 +319,9 @@ def log_reflection_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw
         log_error(timestamp, "empty refl, SCPI timeout likely")
         return np.nan, np.nan, np.nan
     
-def log_transmission_widescan(f_center_GHz, f_span_GHz, na_power=-5, n_avgs=30, if_bw_Hz = 1e4):
+def log_transmission_widescan(f_start_GHz, f_stop_GHz, na_power=-5, n_avgs=30, if_bw_Hz = 1e4):
+    f_center_GHz = (f_start_GHz+f_stop_GHz)/2
+    f_span_GHz = f_stop_GHz-f_start_GHz
     switch_rf("transmission")
     timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
     f, iq = scan_na(f_center_GHz, f_span_GHz, na_power, n_avgs, if_bw_Hz)
@@ -333,6 +330,19 @@ def log_transmission_widescan(f_center_GHz, f_span_GHz, na_power=-5, n_avgs=30, 
     p = np.add(np.square(re),np.square(im)).astype(np.float64)
     p = p.tolist()
     log_na_scan("transmission_widescan", timestamp, f, p)
+    return f, p
+
+def log_reflection_widescan(f_start_GHz, f_stop_GHz, na_power=-5, n_avgs=30, if_bw_Hz = 1e4):
+    f_center_GHz = (f_start_GHz+f_stop_GHz)/2
+    f_span_GHz = f_stop_GHz-f_start_GHz
+    switch_rf("reflection")
+    timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
+    f, iq = scan_na(f_center_GHz, f_span_GHz, na_power, n_avgs, if_bw_Hz)
+    re = iq[0::2]
+    im = iq[1::2]
+    p = np.add(np.square(re),np.square(im)).astype(np.float64)
+    p = p.tolist()
+    log_na_scan("reflection_widescan", timestamp, f, p)
     return f, p
 
 def set_lo_center_freq(center_freq):
