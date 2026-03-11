@@ -486,18 +486,32 @@ def query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string):
 
 #This is for sending SCPI commands which you don't expect any response for. (Using query_SCPI for said commands causes a timeout error).
 #NOTE: that this only TRIES to write your command. It doesn't check if it actually worked. To check if it worked you can use query_SCPI.
-def write_SCPI(IP_ADDRESS, PORT, SNAP_TIME, SCPI_string):
-    timeout_delta = datetime.timedelta(seconds=SNAP_TIME)
+#def write_SCPI(IP_ADDRESS, PORT, SNAP_TIME, SCPI_string):
+#    timeout_delta = datetime.timedelta(seconds=SNAP_TIME)
+#
+#    # update_current_task('sending SCPI Query:',SCPI_string) #This might just be annoying
+#    #Establish connection via the socket
+#    socket_connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#    socket_connection.connect((IP_ADDRESS, PORT))
+#    
+#    # Send encoded message and record time of the measurement
+#    socket_connection.sendall(SCPI_string.encode())
+#    #The *OPC? command is a universal SCPI command that tells the instrument BUS to wait until the last-sent command has been executed. Might not work for a GPIB with multiple connections.
+#    OPC_command = "*OPC?\n"
+#    socket_connection.sendall(OPC_command.encode())
+#
+#    return
 
-    # update_current_task('sending SCPI Query:',SCPI_string) #This might just be annoying
-    #Establish connection via the socket
-    socket_connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    socket_connection.connect((IP_ADDRESS, PORT))
-    
-    # Send encoded message and record time of the measurement
-    socket_connection.sendall(SCPI_string.encode())
-    #The *OPC? command is a universal SCPI command that tells the instrument BUS to wait until the last-sent command has been executed. Might not work for a GPIB with multiple connections.
-    OPC_command = "*OPC?\n"
-    socket_connection.sendall(OPC_command.encode())
+def write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string):
 
-    return
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as socket_connection:
+
+        socket_connection.settimeout(TIMEOUT)
+        socket_connection.connect((IP_ADDRESS, PORT))
+
+        socket_connection.sendall(SCPI_string.encode())
+
+        # wait for operation complete
+        socket_connection.sendall("*OPC?\n".encode())
+
+        response = socket_connection.recv(1024)
