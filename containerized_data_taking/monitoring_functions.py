@@ -433,74 +433,29 @@ def switch_rf(setting): #setting values: "transmission", "reflection", "digitize
 
     return
 
-
-
 def query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string):
-    # update_current_task('sending SCPI Query:',SCPI_string) #This might just be annoying
-    #Establish connection via the socket
-    socket_connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    socket_connection.settimeout(TIMEOUT)
-    socket_connection.connect((IP_ADDRESS, PORT))
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as socket_connection:
+        socket_connection.settimeout(TIMEOUT)
+        socket_connection.connect((IP_ADDRESS, PORT))
+        socket_connection.sendall(SCPI_string.encode())
+        timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
+        recv_bytes = b''
+        try:
+            while True:
+                chunk = socket_connection.recv(4096)
 
-    # Send encoded message and record time of the measurement
-    socket_connection.sendall(SCPI_string.encode())
-    timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
+                if not chunk:
+                    break
 
-    # Apply recv until a message with a newline at the end is received.
-    # If TIMEOUT is reached before then cancel and return timestamp and False boolean.
-    recv_bytes = bytes(0)  # Empty bytes
-    not_timed_out = True
-    while not_timed_out:
-        recv_bytes += socket_connection.recv(4096)
-        # print(recv_bytes.decode())
-        if recv_bytes[-1:] == b"\n":  # Check if last term is a newline
-            break
-        if datetime.datetime.now(pytz.timezone('US/Pacific'))-timestamp>datetime.timedelta(seconds=TIMEOUT):
+                recv_bytes += chunk
+
+                if recv_bytes.endswith(b"\n"):
+                    break
+        except socket.timeout:
             return timestamp, False
+        val_raw = recv_bytes.decode()
 
-    val_raw = recv_bytes.decode()
-
-    return timestamp, val_raw
-
-#Trying an arbitrarily high "master_timeout" which cuts off the while loop if no response is received in that number of seconds
-#def query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string, master_timeout=10000000):
-#    # update_current_task('sending SCPI Query:',SCPI_string) #This might just be annoying
-#    #Establish connection via the socket
-#    socket_connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#    socket_connection.settimeout(TIMEOUT)
-#    socket_connection.connect((IP_ADDRESS, PORT))
-#
-#    # Send encoded message and record time of the measurement
-#    socket_connection.sendall(SCPI_string.encode())
-#    timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
-#
-#    # Apply recv until a message with a newline at the end is received
-#    recv_bytes = bytes(0)  # Empty bytes
-#    recv_bytes += socket_connection.recv(4096)
-#    if recv_bytes[-1:] == b"\n":  # Check if last term is a newline
-#        val_raw = recv_bytes.decode()
-#        return timestamp, val_raw
-#    else:
-#        return timestamp, False
-    
-
-#This is for sending SCPI commands which you don't expect any response for. (Using query_SCPI for said commands causes a timeout error).
-#NOTE: that this only TRIES to write your command. It doesn't check if it actually worked. To check if it worked you can use query_SCPI.
-#def write_SCPI(IP_ADDRESS, PORT, SNAP_TIME, SCPI_string):
-#    timeout_delta = datetime.timedelta(seconds=SNAP_TIME)
-#
-#    # update_current_task('sending SCPI Query:',SCPI_string) #This might just be annoying
-#    #Establish connection via the socket
-#    socket_connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#    socket_connection.connect((IP_ADDRESS, PORT))
-#    
-#    # Send encoded message and record time of the measurement
-#    socket_connection.sendall(SCPI_string.encode())
-#    #The *OPC? command is a universal SCPI command that tells the instrument BUS to wait until the last-sent command has been executed. Might not work for a GPIB with multiple connections.
-#    OPC_command = "*OPC?\n"
-#    socket_connection.sendall(OPC_command.encode())
-#
-#    return
+        return timestamp, val_raw
 
 def write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string):
 
