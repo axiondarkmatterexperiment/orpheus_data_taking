@@ -178,32 +178,86 @@ def scan_na(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4):
     PORT=5025
     TIMEOUT=60 #This might need to be changed dependent on the averaging time
 
-    f_center = f_center_GHz*1e9
-    f_span = f_span_GHz*1e9
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "ABOR; INIT1:CONT OFF;*OPC?\n")
+    print(f"Line No: {sys._getframe().f_lineno}")
 
-    #Stop any sweep
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "ABOR; INIT1:CONT OFF\n")
+    #Sweep setup
+    SCPI_string = "SENS1:FREQ:CENT " + str(f_center_GHz*1e9) + ";*OPC?\n"
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    SCPI_string = "SENS1:FREQ:SPAN " + str(f_span_GHz*1e9) + ";*OPC?\n"
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    SCPI_string = "SOUR:POW " + str(na_power) + ";*OPC?\n"
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    print(f"Line No: {sys._getframe().f_lineno}")
 
-    #Configure for the measurement
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, f"SENS1:FREQ:CENT {f_center};")
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, f"SENS1:FREQ:SPAN {f_span};")
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, f"SOUR:POW {na_power};")
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, f"SENS1:BAND {if_bw_Hz};")
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, f"SENS1:AVER ON;")
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, f"TRIG:AVER ON;")
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, f"SENS1:AVER:COUNT {n_avgs};")
-    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, f"SENS1:AVER:CLE;*OPC?\n")
+    #Averaging
+    SCPI_string = "SENS1:AVER:COUNT " + str(n_avgs) + ";*OPC?\n"
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    SCPI_string = "TRIG:AVER ON;*OPC?\n" 
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    #I commented the following two lines because it took forever
+    #SCPI_string = "TRIG:AVER:CLE;*OPC?\n"#Clears and restarts the averaging of the measurement data
+    #query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    SCPI_string = "SENS1:BAND " + str(if_bw_Hz) + ";*OPC?\n"
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    print(f"Line No: {sys._getframe().f_lineno}")
 
-    #Request the calculated sweep time:
-    throwaway_timestamp, sweep_duration = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "SENS1:SWE:TIME?\n")
+    #Request expected scan duration:
+    SCPI_string = "SENS1:SWE:TIME?\n"
+    throwaway_timestamp, sweep_duration = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    timedelta_duration = datetime.timedelta(seconds=float(sweep_duration)*n_avgs)
+    print(f"Line No: {sys._getframe().f_lineno}")
+    
+    #Triggering
+    SCPI_string = "INIT1;*OPC?\n" #sets trigger to single
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    SCPI_string = "TRIG:SOUR BUS;*OPC?\n" #sets trigger source to bus
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    SCPI_string = "TRIG;*OPC?\n" #triggers the measurement
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
+    print(f"Line No: {sys._getframe().f_lineno}")
+    
+    #Wait for measurement to finish
+    t1 = datetime.datetime.now(pytz.timezone('US/Pacific'))
+    t2 = datetime.datetime.now(pytz.timezone('US/Pacific'))
+    print('waiting for ' + str(timedelta_duration))
+    while t2-t1 < timedelta_duration:
+        t2 = datetime.datetime.now(pytz.timezone('US/Pacific'))
+        time.sleep(0.1)
 
-    #Trigger configuration:
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "TRIG:SOUR BUS\n")
-    #Start sweep:
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "INIT1\n")
-    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "TRIG*OPC?\n")
-    #Wait for predicted duration
-    time.sleep(float(sweep_duration)*(n_avgs+1))
+
+    ####
+    ### begin of added section
+    ####
+    #f_center = f_center_GHz*1e9
+    #f_span = f_span_GHz*1e9
+
+    ##Stop any sweep
+    #write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "ABOR; INIT1:CONT OFF\n")
+
+    ##Configure for the measurement
+    #write_SCPI(IP_ADDRESS, PORT, TIMEOUT, f"SENS1:FREQ:CENT {f_center};")
+    #write_SCPI(IP_ADDRESS, PORT, TIMEOUT, f"SENS1:FREQ:SPAN {f_span};")
+    #write_SCPI(IP_ADDRESS, PORT, TIMEOUT, f"SOUR:POW {na_power};")
+    #write_SCPI(IP_ADDRESS, PORT, TIMEOUT, f"SENS1:BAND {if_bw_Hz};")
+    #write_SCPI(IP_ADDRESS, PORT, TIMEOUT, f"SENS1:AVER ON;")
+    #write_SCPI(IP_ADDRESS, PORT, TIMEOUT, f"TRIG:AVER ON;")
+    #write_SCPI(IP_ADDRESS, PORT, TIMEOUT, f"SENS1:AVER:COUNT {n_avgs};")
+    #query_SCPI(IP_ADDRESS, PORT, TIMEOUT, f"SENS1:AVER:CLE;*OPC?\n")
+
+    ##Request the calculated sweep time:
+    #throwaway_timestamp, sweep_duration = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "SENS1:SWE:TIME?\n")
+
+    ##Trigger configuration:
+    #write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "TRIG:SOUR BUS\n")
+    ##Start sweep:
+    #write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "INIT1\n")
+    #query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "TRIG*OPC?\n")
+    ##Wait for predicted duration
+    #time.sleep(float(sweep_duration)*(n_avgs+1))
+    #####
+    #### End of added section
+    #####
     
     #Take scan data
     SCPI_string = "CALC1:DATA:SDAT?\n" #ask for the IQ data. Format: n*2-1 is real, n*2 is imaginary
