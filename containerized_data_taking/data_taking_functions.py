@@ -17,7 +17,7 @@ from calibration_functions import SN_U04844, SN_X201099, SN_68179, SN_68253, SN_
 from monitoring_functions import query_SCPI, write_SCPI, log_error, update_current_task
 from fitting_functions import data_lorentzian_fit, deconvolve_phase, calculate_coupling, func_pow_transmitted, func_pow_reflected
 
-def log_cavity_params(param_name, timestamp, val):
+def log_cavity_params(param_name, timestamp, val, data_id = None):
     ''' 
     Set up connection to the psql database
     '''
@@ -28,7 +28,11 @@ def log_cavity_params(param_name, timestamp, val):
     #I think this is just what we use to send commands directly to the postgres command line
     cur = conn.cursor()
 
-    cur.execute("INSERT INTO cavity_params (param_name, timestamp, val) VALUES (%s, %s, %s)",
+    if data_id:
+        cur.execute("INSERT INTO cavity_params (param_name, timestamp, val, data_id) VALUES (%s, %s, %s, %s)",
+                (param_name, timestamp, val, data_id))
+    else:
+        cur.execute("INSERT INTO cavity_params (param_name, timestamp, val) VALUES (%s, %s, %s)",
                 (param_name, timestamp, val))
     
     conn.commit()
@@ -36,7 +40,7 @@ def log_cavity_params(param_name, timestamp, val):
     cur.close()
     conn.close()
 
-def log_na_scan(scan_type, timestamp, freqs, iq_data):
+def log_na_scan(scan_type, timestamp, freqs, iq_data, data_id=None):
     ''' 
     Set up connection to the psql database
     '''
@@ -47,15 +51,19 @@ def log_na_scan(scan_type, timestamp, freqs, iq_data):
     #I think this is just what we use to send commands directly to the postgres command line
     cur = conn.cursor()
 
-    cur.execute("INSERT INTO na_scans (scan_type, timestamp, freqs, iq_data) VALUES (%s, %s, %s, %s)",
-                (scan_type, timestamp, freqs, iq_data))
-    
+    if data_id:
+        cur.execute("INSERT INTO na_scans(scan_type, timestamp, freqs, iq_data, data_id) VALUES (%s, %s, %s, %s, %s)",
+                    (scan_type, timestamp, freqs, iq_data, data_id))
+    else:
+        cur.execute("INSERT INTO na_scans (scan_type, timestamp, freqs, iq_data) VALUES (%s, %s, %s, %s)",
+                    (scan_type, timestamp, freqs, iq_data))
+
     conn.commit()
     
     cur.close()
     conn.close()
 
-def log_digitization(timestamp, freqs, pows):
+def log_digitization(timestamp, freqs, pows, data_id=None):
     ''' 
     Set up connection to the psql database
     '''
@@ -65,8 +73,12 @@ def log_digitization(timestamp, freqs, pows):
 
     #I think this is just what we use to send commands directly to the postgres command line
     cur = conn.cursor()
-
-    cur.execute("INSERT INTO digitizations (timestamp, freqs, pows) VALUES (%s, %s, %s)",
+    
+    if data_id:
+        cur.execute("INSERT INTO digitizations (timestamp, freqs, pows, data_id) VALUES (%s, %s, %s, %s)",
+                (timestamp, freqs, pows, data_id))
+    else:
+        cur.execute("INSERT INTO digitizations (timestamp, freqs, pows) VALUES (%s, %s, %s)",
                 (timestamp, freqs, pows))
     
     conn.commit()
@@ -276,7 +288,7 @@ def scan_na(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4):
 
     return f_raw, iq_raw 
 
-def log_transmission_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4, fitting=True, param_logging=True):
+def log_transmission_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4, fitting=True, param_logging=True, data_id=None):
     update_current_task("log_transmission_scan")
     switch_rf("transmission")
     timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
@@ -301,15 +313,15 @@ def log_transmission_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_
                 p_fit = []
                 #print("fit failed")
             if param_logging==True:
-                log_cavity_params("f0_trans",timestamp, float(popt[0]))
-                log_cavity_params("Q_trans",timestamp, float(popt[1]))
-                log_cavity_params("dy_trans",timestamp, float(popt[2]))
-                log_cavity_params("C_trans",timestamp, float(popt[3]))
+                log_cavity_params("f0_trans",timestamp, float(popt[0]), data_id)
+                log_cavity_params("Q_trans",timestamp, float(popt[1]), data_id)
+                log_cavity_params("dy_trans",timestamp, float(popt[2]), data_id)
+                log_cavity_params("C_trans",timestamp, float(popt[3]), data_id)
                  
-                log_cavity_params("f0_err_trans",timestamp, float(perr[0]))
-                log_cavity_params("Q_err_trans",timestamp, float(perr[1]))
-                log_cavity_params("dy_err_trans",timestamp, float(perr[2]))
-                log_cavity_params("C_err_trans",timestamp, float(perr[3]))
+                log_cavity_params("f0_err_trans",timestamp, float(perr[0]), data_id)
+                log_cavity_params("Q_err_trans",timestamp, float(perr[1]), data_id)
+                log_cavity_params("dy_err_trans",timestamp, float(perr[2]), data_id)
+                log_cavity_params("C_err_trans",timestamp, float(perr[3]), data_id)
 
             p = p.tolist()
             log_na_scan_for_display("transmission", timestamp, f, p, p_fit)
@@ -321,7 +333,7 @@ def log_transmission_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_
         log_error(timestamp, "empty trans, SCPI timeout likely")
         return np.nan, np.nan
 
-def log_reflection_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4, fitting=True, param_logging=True):
+def log_reflection_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4, fitting=True, param_logging=True, data_id=None):
     update_current_task("log_reflection_scan")
     switch_rf("reflection")
     timestamp = datetime.datetime.now(pytz.timezone('US/Pacific'))
@@ -352,16 +364,16 @@ def log_reflection_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw
             beta = calculate_coupling(popt[2]/popt[3],cavity_phase)
             
             if param_logging==True:
-                log_cavity_params("f0_refl",timestamp, float(popt[0]))
-                log_cavity_params("Q_refl",timestamp, float(popt[1]))
-                log_cavity_params("dy_refl",timestamp, float(popt[2]))
-                log_cavity_params("C_refl",timestamp, float(popt[3]))
-                log_cavity_params("beta",timestamp,float(beta))
+                log_cavity_params("f0_refl",timestamp, float(popt[0]), data_id)
+                log_cavity_params("Q_refl",timestamp, float(popt[1]), data_id)
+                log_cavity_params("dy_refl",timestamp, float(popt[2]), data_id)
+                log_cavity_params("C_refl",timestamp, float(popt[3]), data_id)
+                log_cavity_params("beta",timestamp,float(beta), data_id)
                  
-                log_cavity_params("f0_err_refl",timestamp, float(perr[0]))
-                log_cavity_params("Q_err_refl",timestamp, float(perr[1]))
-                log_cavity_params("dy_err_refl",timestamp, float(perr[2]))
-                log_cavity_params("C_err_refl",timestamp, float(perr[3]))
+                log_cavity_params("f0_err_refl",timestamp, float(perr[0]), data_id)
+                log_cavity_params("Q_err_refl",timestamp, float(perr[1]), data_id)
+                log_cavity_params("dy_err_refl",timestamp, float(perr[2]), data_id)
+                log_cavity_params("C_err_refl",timestamp, float(perr[3]), data_id)
                 #The calculate_coupling function does not have error propagation calculations to give a value for beta_err. I should add it.
 
             p = p.tolist()
@@ -375,7 +387,7 @@ def log_reflection_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw
         log_error(timestamp, "empty refl, SCPI timeout likely")
         return np.nan, np.nan, np.nan
     
-def log_transmission_widescan(f_start_GHz, f_stop_GHz, na_power=-5, n_avgs=30, if_bw_Hz = 1e4):
+def log_transmission_widescan(f_start_GHz, f_stop_GHz, na_power=-5, n_avgs=30, if_bw_Hz = 1e4, data_id=None):
     f_center_GHz = (f_start_GHz+f_stop_GHz)/2
     f_span_GHz = f_stop_GHz-f_start_GHz
     switch_rf("transmission")
