@@ -92,7 +92,7 @@ def run_GUI():
                         entity_str = input_str[0:input_str.find(',')]
                         #Catalogue of entities:
                         catalogue = np.asarray(["na_power", "na_fc", "na_span", "transmission_Q", "dl_cm", "transmission_period", "reflection_period", 
-                                                "tuning_period", "digitization_period","max_cavity_length", "min_cavity_length",
+                                                "tuning_period", "digitization_period","widescan_period","max_cavity_length", "min_cavity_length",
                                                 "na_transmission_Q_widths", "na_reflection_Q_widths"])
                         cat_idx = np.argwhere(catalogue==entity_str)
                         #If an item in the catalogue has been selected, update the attribute of the state class through the API
