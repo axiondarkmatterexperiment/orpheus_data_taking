@@ -13,7 +13,7 @@ class OrpheusGUI:
         Operator=OrpheusOperator()
         #Commands catalogue:
         self.catalogue_tile = ListTile(["na_power_trans,<>: (dBm)", "na_power_refl,<>: (dBm)", "na_fc,<>: (GHz)", "na_span,<>: (GHz)", "transmission_Q,<>: ()",
-                                        "transmission_period,<>: ()","reflection_period,<>: ()","tuning_period,<>: ()",
+                                        "transmission_period,<>: ()", "reflection_period,<>: ()", "widescan_period,<>: ()", "tuning_period,<>: ()",
                                         "max_cavity_length,<>: (cm)","min_cavity_length,<>: (cm)","na_transmission_Q_widths,<>: ()",
                                         "na_reflection_Q_widths,<>: ()"],title="Command Catalogue",rect=(0,0,65,0))
        
