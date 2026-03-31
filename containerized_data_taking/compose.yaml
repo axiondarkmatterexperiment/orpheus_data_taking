@@ -6,7 +6,7 @@ services:
     ports:
       - "8000:8000"   # host:container
     volumes:
-      - ./saved_cavity_files:/app/data
+      - ./saved_experiment_params:/app/data
     environment:
       - NODE_ENV=production
     restart: unless-stopped
