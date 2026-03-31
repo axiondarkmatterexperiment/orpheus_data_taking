@@ -174,13 +174,13 @@ def switch_rf(setting): #setting values: "transmission", "reflection", "digitize
         #print("not doing anything. make sure the setting is either transmission, reflection, or digitization.")
         return
    
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "INST:SEL CH1\n")
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "SOUR:OUTP:ENAB 1\n")
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "SOUR:CHAN:OUTP:STAT " + ch1 + "\n")
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "INST:SEL CH1; *OPC?\n")
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "SOUR:OUTP:ENAB 1; *OPC?\n")
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "SOUR:CHAN:OUTP:STAT " + ch1 + "; *OPC?\n")
     
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "INST:SEL CH2\n")
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "SOUR:OUTP:ENAB 1\n")
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT,"SOUR:CHAN:OUTP:STAT " + ch2 + "\n")
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "INST:SEL CH2; *OPC?\n")
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "SOUR:OUTP:ENAB 1; *OPC?\n")
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT,"SOUR:CHAN:OUTP:STAT " + ch2 + "; *OPC?\n")
 
     return
 
@@ -191,7 +191,6 @@ def scan_na(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4):
     TIMEOUT=60 #This might need to be changed dependent on the averaging time
 
     query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "ABOR; INIT1:CONT OFF;*OPC?\n")
-    print(f"Line No: {sys._getframe().f_lineno}")
 
     #Sweep setup
     SCPI_string = "SENS1:FREQ:CENT " + str(f_center_GHz*1e9) + ";*OPC?\n"
@@ -200,7 +199,6 @@ def scan_na(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4):
     query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
     SCPI_string = "SOUR:POW " + str(na_power) + ";*OPC?\n"
     query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-    print(f"Line No: {sys._getframe().f_lineno}")
 
     #Averaging
     SCPI_string = "SENS1:AVER:COUNT " + str(n_avgs) + ";*OPC?\n"
@@ -212,13 +210,11 @@ def scan_na(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4):
     #query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
     SCPI_string = "SENS1:BAND " + str(if_bw_Hz) + ";*OPC?\n"
     query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-    print(f"Line No: {sys._getframe().f_lineno}")
 
     #Request expected scan duration:
     SCPI_string = "SENS1:SWE:TIME?\n"
     throwaway_timestamp, sweep_duration = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
     timedelta_duration = datetime.timedelta(seconds=float(sweep_duration)*n_avgs)
-    print(f"Line No: {sys._getframe().f_lineno}")
     
     #Triggering
     SCPI_string = "INIT1;*OPC?\n" #sets trigger to single
@@ -227,12 +223,10 @@ def scan_na(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw_Hz = 1e4):
     query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
     SCPI_string = "TRIG;*OPC?\n" #triggers the measurement
     query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string)
-    print(f"Line No: {sys._getframe().f_lineno}")
     
     #Wait for measurement to finish
     t1 = datetime.datetime.now(pytz.timezone('US/Pacific'))
     t2 = datetime.datetime.now(pytz.timezone('US/Pacific'))
-    print('waiting for ' + str(timedelta_duration))
     while t2-t1 < timedelta_duration:
         t2 = datetime.datetime.now(pytz.timezone('US/Pacific'))
         time.sleep(0.1)
@@ -297,7 +291,7 @@ def log_transmission_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_
     im = iq[1::2]
     p = np.add(np.square(re),np.square(im)).astype(np.float64)
     p = p.tolist()
-    log_na_scan("transmission", timestamp, f, iq)
+    log_na_scan("transmission", timestamp, f, iq, data_id)
     if f and iq:
         if fitting:
             re, im = iq[::2], iq[1::2]    
@@ -342,7 +336,7 @@ def log_reflection_scan(f_center_GHz, f_span_GHz, na_power=-10, n_avgs=16, if_bw
     im = iq[1::2]
     p = np.add(np.square(re),np.square(im)).astype(np.float64)
     p = p.tolist()
-    log_na_scan("reflection", timestamp, f, iq)
+    log_na_scan("reflection", timestamp, f, iq, data_id)
     if f and iq:
         if fitting:
             re, im = iq[::2], iq[1::2]
