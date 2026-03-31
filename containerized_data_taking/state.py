@@ -1,9 +1,6 @@
 import threading
 import json
 
-with open('data/cavity_current_length.txt', 'r', encoding='utf-8') as f:
-    cavity_length = float(f.read())
-
 with open('data/experiment_params.json', 'r') as f:
     state_attributes = json.load(f)
 
@@ -36,6 +33,7 @@ class ExperimentState:
         self.reflection_period = state_attributes["reflection_period"]
         self.tuning_period = state_attributes["tuning_period"]
         self.digitization_period = state_attributes["digitization_period"]
+        self.widescan_period = state_attributes["widescan_period"]
         
     
     def to_dict(self):
@@ -59,27 +57,29 @@ class ExperimentState:
                 "transmission_period": self.transmission_period,
                 "reflection_period": self.reflection_period,
                 "tuning_period": self.tuning_period,
-                "digitization_period": self.digitization_period
+                "digitization_period": self.digitization_period,
+                "widescan_period": self.widescan_period
             }
 
     def update_json(self):
         with open('data/experiment_params.json', 'r') as f:
             data = json.load(f)
-        data["na_fc"] = self.na_fc
-        data["na_span"] = self.na_span
-        data["transmission_Q"] = self.transmission_Q
-        data["transmission_f0"] = self.transmission_f0
-        data["beta"] = self.beta
-        data["dl_cm"] = self.dl_cm
-        data["cavity_length"] = self.cavity_length
-        data["min_cavity_length"] = self.min_cavity_length
-        data["max_cavity_length"] = self.max_cavity_length
-        data["na_transmission_Q_widths"] = self.na_transmission_Q_widths
-        data["na_reflection_Q_widths"] = self.na_reflection_Q_widths
-        data["transmission_period"] = self.transmission_period
-        data["reflection_period"] = self.reflection_period
-        data["tuning_period"] = self.tuning_period
-        data["digitization_period"] = self.digitization_period
+            data["na_fc"] = self.na_fc
+            data["na_span"] = self.na_span
+            data["transmission_Q"] = self.transmission_Q
+            data["transmission_f0"] = self.transmission_f0
+            data["beta"] = self.beta
+            data["dl_cm"] = self.dl_cm
+            data["cavity_length"] = self.cavity_length
+            data["min_cavity_length"] = self.min_cavity_length
+            data["max_cavity_length"] = self.max_cavity_length
+            data["na_transmission_Q_widths"] = self.na_transmission_Q_widths
+            data["na_reflection_Q_widths"] = self.na_reflection_Q_widths
+            data["transmission_period"] = self.transmission_period
+            data["reflection_period"] = self.reflection_period
+            data["tuning_period"] = self.tuning_period
+            data["digitization_period"] = self.digitization_period
+            data["widescan_period"] = self.widescan_period
         with open('data/experiment_params.json', 'w') as f:
             json.dump(data, f, indent=4)
 
