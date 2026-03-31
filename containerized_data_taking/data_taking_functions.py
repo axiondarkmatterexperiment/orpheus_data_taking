@@ -411,7 +411,7 @@ def set_lo_center_freq(center_freq):
     IP_ADDRESS = "192.168.25.10"
     PORT = 5025
     TIMEOUT = 5
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "FREQ:CW " + str(center_freq) + "\n")
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "FREQ:CW " + str(center_freq) + "; *OPC?\n")
     #Check that it has been set properly, return false / zero if not:
     timestamp, f_set = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "FREQ:CW?\n")
     if float(f_set) == center_freq:
@@ -431,26 +431,6 @@ def start_digitization(acquisition_time):
     write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "START\n")
     time.sleep(0.1)
     return
-
-def digitize(acquisition_time):
-    switch_rf("digitizer")
-    IP_ADDRESS = "192.168.25.8"
-    PORT = 50000
-    TIMEOUT=5
-    set_acq_time_string = "SET:ACQUISITION_TIME " + str(acquisition_time) + "\n"
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, set_acq_time_string)
-    time.sleep(0.1)
-    write_SCPI(IP_ADDRESS, PORT, TIMEOUT, "START\n")
-    time.sleep(0.1)
-    wait_for_digitization(return_digitization=False)
-    timestamp, spectrum = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "GET:LAST_SPECTRUM?\n")
-    spectrum = io.StringIO(spectrum)
-    spectrum = np.genfromtxt(spectrum,dtype=float,delimiter=None)
-    #spectrum = spectrum.T
-    pows = spectrum.tolist()
-    freqs = np.arange(np.size(pows)).tolist()
-    log_digitization(timestamp, freqs, pows)
-    return timestamp, spectrum
 
 def wait_for_digitization(return_digitization=True):
     update_current_task("wait_for_digitization")
@@ -476,11 +456,6 @@ def wait_for_digitization(return_digitization=True):
         pows = spectrum.tolist()
         freqs = np.arange(np.size(pows)).tolist()
         return timestamp, freqs, pows
-
-def digitize_at_fc(acquisition_time, center_freq):
-    set_lo_center_freq(center_freq)
-    digitize(acquisition_time)
-    wait_for_digitization()
 
 def tune_while_tracking_mode(initial_f0_GHz, initial_span_GHz, tune_distance_cm, tune_increment_cm, measure_coupling=True):
     from motor_functions import coordinated_motion
