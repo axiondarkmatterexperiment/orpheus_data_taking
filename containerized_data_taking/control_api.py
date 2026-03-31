@@ -49,14 +49,6 @@ def set_value(payload: dict):
                 setattr(state, key, value)
     return {"success": True}
 
-#@app.get("/get")
-#def get_value(payload):
-#    with state.lock:
-#        for key in payload:
-#            if hasattr(state, key):
-#                value = getattr(state, key)
-#    return value
-
 @app.post("/pause")
 def pause():
     state.pause = True
