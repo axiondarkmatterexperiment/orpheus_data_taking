@@ -158,7 +158,7 @@ def log_na_scan(scan_type, timestamp, freqs, iq_data):
     conn.close()
     
 
-def log_sensor(sensor_name, timestamp, val_raw, val_cal ):
+def log_sensor(sensor_name, timestamp, val_raw, val_cal, data_id=None):
     ''' 
     Set up connection to the psql database
     '''
@@ -169,9 +169,12 @@ def log_sensor(sensor_name, timestamp, val_raw, val_cal ):
 
     #I think this is just what we use to send commands directly to the postgres command line
     cur = conn.cursor()
-
-    cur.execute("INSERT INTO experiment_monitoring(sensor_name, timestamp, val_raw, val_cal) VALUES (%s, %s, %s, %s)",
-                (sensor_name, timestamp, val_raw, val_cal))
+    if data_id:
+        cur.execute("INSERT INTO experiment_monitoring(sensor_name, timestamp, val_raw, val_cal) VALUES (%s, %s, %s, %s, %s)",
+                    (sensor_name, timestamp, val_raw, val_cal, data_id))
+    else:
+        cur.execute("INSERT INTO experiment_monitoring(sensor_name, timestamp, val_raw, val_cal) VALUES (%s, %s, %s, %s)",
+                    (sensor_name, timestamp, val_raw, val_cal))
     
     conn.commit()
     
@@ -458,15 +461,7 @@ def query_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string):
         return timestamp, val_raw
 
 def write_SCPI(IP_ADDRESS, PORT, TIMEOUT, SCPI_string):
-
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as socket_connection:
-
         socket_connection.settimeout(TIMEOUT)
         socket_connection.connect((IP_ADDRESS, PORT))
-
         socket_connection.sendall(SCPI_string.encode())
-
-        # wait for operation complete
-        socket_connection.sendall("*OPC?\n".encode())
-
-        response = socket_connection.recv(1024)
