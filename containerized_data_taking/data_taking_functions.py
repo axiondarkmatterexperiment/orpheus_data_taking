@@ -85,6 +85,8 @@ def log_digitization(timestamp, freqs, pows, data_id=None):
     
     cur.close()
     conn.close()
+
+    log_na_scan_for_display("digitization", timestamp, freqs, pows)
     
 #logs either reflection or transmission scans in a separate table for displaying on grafana.
 #Will log the fit as well. Assumes no fit data but if fit is provided it will log it.
@@ -148,6 +150,16 @@ def log_na_scan_for_display(scan_type, timestamp, freqs, pows, fit_pows=[]):
         cur.execute("INSERT INTO reflection_fit_display (timestamp, freqs, pows) VALUES (%s,%s,%s)",
                     (timestamp, freqs, fit_pows))
 
+    elif scan_type == "digitization" or scan_type == "dig":
+        cur.execute("""CREATE TABLE IF NOT EXISTS public.digitization_display(
+                    "timestamp" TIMESTAMPTZ,
+                    freqs NUMERIC[],
+                    pows NUMERIC[]
+                    );
+                    """)
+        cur.execute("TRUNCATE TABLE digitization_display") #I only want this table to have a single NA scan in it at a time.
+        cur.execute("INSERT INTO digitization_display (timestamp, freqs, pows) VALUES (%s,%s,%s)",
+                (timestamp, freqs, pows))
 
     conn.commit()
     
