@@ -13,7 +13,7 @@ import pytz
 from calibration_functions import SN_U04844, SN_X201099, SN_68179, SN_68253, SN_64753, SN_67247, RUOX_202A,                                        SN_X83781,                PT_100
 
 def log_sensors():
-    log_magnet_temps()
+    #log_magnet_temps()
     #log_outside_can_temp()
     log_resonator_temps()
     #log_LHe_level()
@@ -43,7 +43,8 @@ def establish_databases():
     cur.execute("""CREATE TABLE IF NOT EXISTS public.cavity_params (
                 param_name TEXT,
                 "timestamp" TIMESTAMPTZ,
-                val REAL
+                val REAL,
+                data_id BIGINT
                 );
                 """)
     
@@ -51,7 +52,8 @@ def establish_databases():
                 sensor_name TEXT,
                 "timestamp" TIMESTAMPTZ,
                 val_raw REAL,
-                val_cal REAL
+                val_cal REAL,
+                data_id BIGINT
                 );
                 """)
     
@@ -59,14 +61,16 @@ def establish_databases():
                 scan_type TEXT,
                 "timestamp" TIMESTAMPTZ,
                 freqs REAL,
-                iq_data REAL
+                iq_data REAL,
+                data_id BIGINT
                 );
                 """)
     
     cur.execute("""CREATE TABLE IF NOT EXISTS public.digitizations (
                 "timestamp" TIMESTAMPTZ,
                 freqs REAL[],
-                pows REAL[]
+                pows REAL[],
+                data_id BIGINT
                 );
                 """)
 
@@ -137,26 +141,6 @@ def log_error(timestamp, error_message):
     cur.close()
     conn.close()
 
-def log_na_scan(scan_type, timestamp, freqs, iq_data):
-    ''' 
-    Set up connection to the psql database
-    '''
-
-    # define the connection to the postgres database
-    # conn = psycopg2.connect(host='192.168.25.2', dbname='postgres', user='admx_master', password='wimpssuck', port=5432)
-    conn = psycopg2.connect(host='192.168.25.2', dbname='orpheus_db', user='postgres', password='axionsrock', port=5432)
-
-    #I think this is just what we use to send commands directly to the postgres command line
-    cur = conn.cursor()
-
-    cur.execute("INSERT INTO na_scans (scan_type, timestamp, freqs, iq_data) VALUES (%s, %s, %s, %s)",
-                (scan_type, timestamp, freqs, iq_data))
-    
-    conn.commit()
-    
-    cur.close()
-    conn.close()
-    
 
 def log_sensor(sensor_name, timestamp, val_raw, val_cal, data_id=None):
     ''' 
@@ -170,7 +154,7 @@ def log_sensor(sensor_name, timestamp, val_raw, val_cal, data_id=None):
     #I think this is just what we use to send commands directly to the postgres command line
     cur = conn.cursor()
     if data_id:
-        cur.execute("INSERT INTO experiment_monitoring(sensor_name, timestamp, val_raw, val_cal) VALUES (%s, %s, %s, %s, %s)",
+        cur.execute("INSERT INTO experiment_monitoring(sensor_name, timestamp, val_raw, val_cal, data_id) VALUES (%s, %s, %s, %s, %s)",
                     (sensor_name, timestamp, val_raw, val_cal, data_id))
     else:
         cur.execute("INSERT INTO experiment_monitoring(sensor_name, timestamp, val_raw, val_cal) VALUES (%s, %s, %s, %s)",
@@ -182,7 +166,7 @@ def log_sensor(sensor_name, timestamp, val_raw, val_cal, data_id=None):
     conn.close()
 
 #Log the curved mirror, dielectric plate, flat mirror, and HFET temperatures
-def log_resonator_temps():
+def log_resonator_temps(data_id=None):
     update_current_task('logging insert temperatures')
     IP_ADDRESS="192.168.25.11"
     PORT=1234
@@ -212,12 +196,12 @@ def log_resonator_temps():
     val_cal_flat = SN_X83781(val_raw_flat)
     val_cal_hfet = RUOX_202A(val_raw_hfet)
 
-    log_sensor(sensor_name_curv, timestamp_curv, val_raw_curv, val_cal_curv)
-    log_sensor(sensor_name_diel, timestamp_diel, val_raw_diel, val_cal_diel)
-    log_sensor(sensor_name_flat, timestamp_flat, val_raw_flat, val_cal_flat)
-    log_sensor(sensor_name_hfet, timestamp_hfet, val_raw_hfet, val_cal_hfet)
+    log_sensor(sensor_name_curv, timestamp_curv, val_raw_curv, val_cal_curv, data_id)
+    log_sensor(sensor_name_diel, timestamp_diel, val_raw_diel, val_cal_diel, data_id)
+    log_sensor(sensor_name_flat, timestamp_flat, val_raw_flat, val_cal_flat, data_id)
+    log_sensor(sensor_name_hfet, timestamp_hfet, val_raw_hfet, val_cal_hfet, data_id)
 
-def log_magnet_temps():
+def log_magnet_temps(data_id=None):
     update_current_task('logging magnet temperatures')
     #Send the query to the LHe level sensor
     IP_ADDRESS="192.168.25.11"
@@ -239,10 +223,10 @@ def log_magnet_temps():
     val_cal_side_A = SN_U04844(val_raw_side_A)
     val_cal_side_B = SN_X201099(val_raw_side_B)
 
-    log_sensor(sensor_name_side_A, timestamp_side_A, val_raw_side_A, val_cal_side_A)
-    log_sensor(sensor_name_side_B, timestamp_side_B, val_raw_side_B, val_cal_side_B)
+    log_sensor(sensor_name_side_A, timestamp_side_A, val_raw_side_A, val_cal_side_A, data_id)
+    log_sensor(sensor_name_side_B, timestamp_side_B, val_raw_side_B, val_cal_side_B, data_id)
 
-def log_outside_can_temp():
+def log_outside_can_temp(data_id=None):
     update_current_task('logging magnet temperatures')
     #Send the query to the LHe level sensor
     IP_ADDRESS="192.168.25.11"
@@ -259,7 +243,7 @@ def log_outside_can_temp():
 
     val_cal_outside_can = PT_100(val_raw_outside_can)
 
-    log_sensor(sensor_name_outside_can, timestamp_outside_can, val_raw_outside_can, val_cal_outside_can)
+    log_sensor(sensor_name_outside_can, timestamp_outside_can, val_raw_outside_can, val_cal_outside_can, data_id)
 
 
 
@@ -283,7 +267,7 @@ def log_resistor_dewar_bottom():
     log_sensor(sensor_name_dewar_resistor, timestamp_dewar_resistor, val_raw_dewar_resistor, val_cal_dewar_resistor)
 
 #This function accounts for whether the output is on or off. if the output is off then the applied current is zero, and this records it as such.
-def log_hall_sensors():
+def log_hall_sensors(data_id=None):
     update_current_task('logging hall sensor')
     #Send the query to the hall effect sensor's voltage readout
     IP_ADDRESS="192.168.25.11"
@@ -296,7 +280,7 @@ def log_hall_sensors():
     val_raw_hall_sensor = float(val_raw_hall_sensor)
     sensor_name_hall_sensor = "hall_sensor_1"
     val_cal_hall_sensor = SN_68179(val_raw_hall_sensor) #nonsense placeholder for right now. Will drop the table before putting in real values.
-    log_sensor(sensor_name_hall_sensor, timestamp_hall_sensor, val_raw_hall_sensor, val_cal_hall_sensor)
+    log_sensor(sensor_name_hall_sensor, timestamp_hall_sensor, val_raw_hall_sensor, val_cal_hall_sensor, data_id)
 
     #Hall sensor 2
     HALL_SENSOR_SCPI = "MEAS:VOLT? (@102)\n" #Should I specify the resolution and whatever? Check documentation
@@ -304,7 +288,7 @@ def log_hall_sensors():
     val_raw_hall_sensor = float(val_raw_hall_sensor)
     sensor_name_hall_sensor = "hall_sensor_2"
     val_cal_hall_sensor = SN_68253(val_raw_hall_sensor) #nonsense placeholder for right now. Will drop the table before putting in real values.
-    log_sensor(sensor_name_hall_sensor, timestamp_hall_sensor, val_raw_hall_sensor, val_cal_hall_sensor)
+    log_sensor(sensor_name_hall_sensor, timestamp_hall_sensor, val_raw_hall_sensor, val_cal_hall_sensor, data_id)
 
     ##Hall sensor 3
     #HALL_SENSOR_SCPI = "MEAS:VOLT? (@111)\n" #Should I specify the resolution and whatever? Check documentation
@@ -320,7 +304,7 @@ def log_hall_sensors():
     val_raw_hall_sensor = float(val_raw_hall_sensor)
     sensor_name_hall_sensor = "hall_sensor_4"
     val_cal_hall_sensor = SN_67247(val_raw_hall_sensor) #nonsense placeholder for right now. Will drop the table before putting in real values.
-    log_sensor(sensor_name_hall_sensor, timestamp_hall_sensor, val_raw_hall_sensor, val_cal_hall_sensor)
+    log_sensor(sensor_name_hall_sensor, timestamp_hall_sensor, val_raw_hall_sensor, val_cal_hall_sensor, data_id)
 
     #Check the excitation current -- this is technically not a measurement, but just to document that it is at 100 mA, as we want it to be
     #Send query to the Yokogawa GS200 current source
@@ -341,7 +325,7 @@ def log_hall_sensors():
 
     val_cal_hall_current = val_raw_hall_current #I believe no calibration needs to be done for this. So this is redundant but keeping it for consistency
 
-    log_sensor(sensor_name_hall_current, timestamp_hall_current, val_raw_hall_current, val_cal_hall_current)
+    log_sensor(sensor_name_hall_current, timestamp_hall_current, val_raw_hall_current, val_cal_hall_current, data_id)
 
 #Current in amps is input as a floating point, output_setting as a string (either "ON" or "OFF")
 def set_hall_excitation_current(current_in_amps, output_setting): #This does not allow you to set the current above 0.1 Amps
@@ -379,7 +363,7 @@ def set_hall_excitation_current(current_in_amps, output_setting): #This does not
 # so we need to have the level sensor continually read the level, then we can query for it's last measurement with MEAS?
 # It also assumes that the sensor is reading in inches.
 # Then the val_raw is in inches, and the val_cal is in percentage of the sensor length
-def log_LHe_level():
+def log_LHe_level(data_id=None):
     update_current_task('logging LHe level')
     #Send the query to the LHe level sensor
     IP_ADDRESS="192.168.25.13"
@@ -401,7 +385,7 @@ def log_LHe_level():
 
     val_cal = 100*val_raw/sensor_length_inches #assuming that the sensor is set to read out in inches
 
-    log_sensor(sensor_name, timestamp, val_raw, val_cal)
+    log_sensor(sensor_name, timestamp, val_raw, val_cal, data_id)
 
 #Switches for the RF path are controlled by the Keithley power supply.
 #The power supply has two channels. The switch settings are:
