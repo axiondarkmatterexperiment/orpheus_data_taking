@@ -34,6 +34,7 @@ class ExperimentState:
         self.tuning_period = state_attributes["tuning_period"]
         self.digitization_period = state_attributes["digitization_period"]
         self.widescan_period = state_attributes["widescan_period"]
+        self.scan_sensors = state_attributes["scan_sensors"]
         
     
     def to_dict(self):
@@ -58,7 +59,8 @@ class ExperimentState:
                 "reflection_period": self.reflection_period,
                 "tuning_period": self.tuning_period,
                 "digitization_period": self.digitization_period,
-                "widescan_period": self.widescan_period
+                "widescan_period": self.widescan_period,
+                "scan_sensors": self.scan_sensors
             }
 
     def update_json(self):
@@ -80,6 +82,7 @@ class ExperimentState:
             data["tuning_period"] = self.tuning_period
             data["digitization_period"] = self.digitization_period
             data["widescan_period"] = self.widescan_period
+            data["scan_sensors"] = self.scan_sensors
         with open('data/experiment_params.json', 'w') as f:
             json.dump(data, f, indent=4)
 
