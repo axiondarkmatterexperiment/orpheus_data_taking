@@ -463,10 +463,14 @@ def wait_for_digitization(return_digitization=True):
 
     if return_digitization:
         timestamp, spectrum = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "GET:LAST_SPECTRUM?\n")
+        timestamp_throwaway, freqs = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "GET:FREQUENCY_BINS?\n")
         spectrum = io.StringIO(spectrum)
-        spectrum = np.genfromtxt(spectrum,dtype=float,delimiter=None)
+        spectrum = np.genfromtxt(spectrum,dtype=float,delimiter=',')
         pows = spectrum.tolist()
-        freqs = np.arange(np.size(pows)).tolist()
+        #freqs = np.arange(np.size(pows)).tolist()
+        freqs = io.StringIO(freqs)
+        freqs = np.genfromtxt(freqs, dtype=float, delimiter=',')
+        freqs = freqs.tolist()
         return timestamp, freqs, pows
 
 def tune_while_tracking_mode(initial_f0_GHz, initial_span_GHz, tune_distance_cm, tune_increment_cm, measure_coupling=True):
@@ -481,7 +485,7 @@ def tune_while_tracking_mode(initial_f0_GHz, initial_span_GHz, tune_distance_cm,
     while j<num_steps:
         #Look at a wider window after tuning to find the f0 and rough estimate of QL. Don't log the measured cavity parameters
         #Why am I basing it on the Q and not the step size? 
-        na_span_GHz=3*na_span_GHz
+        na_span_GHz=2*na_span_GHz
         na_fc, current_QL = log_transmission_scan(na_fc_GHz, na_span_GHz, param_logging=False)
         na_fc_hold = na_fc #This is to hold the first scanned fc value for this loop so that we can return to it if the mode is lost.
         time.sleep(0.1)
