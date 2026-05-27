@@ -13,11 +13,12 @@ class OrpheusGUI:
         Operator=OrpheusOperator()
         #Commands catalogue:
         self.catalogue_tile = ListTile(["na_power_trans,<>: (dBm)", "na_power_refl,<>: (dBm)", "na_fc,<>: (GHz)", "na_span,<>: (GHz)", "transmission_Q,<>: ()",
-                                        "transmission_period,<>: ()", "reflection_period,<>: ()", "widescan_period,<>: ()", "tuning_period,<>: ()",
+                                        "transmission_period,<>: ()", "reflection_period,<>: ()", "widescan_period,<>: ()", "scan_sensors,<>: ()","tuning_period,<>: ()",
                                         "max_cavity_length,<>: (cm)","min_cavity_length,<>: (cm)","na_transmission_Q_widths,<>: ()",
                                         "na_reflection_Q_widths,<>: ()"],title="Command Catalogue",rect=(0,0,65,0))
        
-        self.tuning_mode_tile = TextTile("tuning forward",(0,0,35,0),title="tuning mode") 
+        self.tuning_mode_tile = TextTile("tuning forward",(0,0,35,7),title="tuning mode") 
+        self.scan_sensors_tile = ValueTile(Operator.scan_sensors,(0,0,35,7), title="scan sensors")
         #input tile and message tile (on the bottom of the GUI):
         self.input_tile = TextEntryTile("",(0,0,100,4),title="command input:")
         self.message_tile = TextTile("",(0,0,100,4),title="Message")	
@@ -46,7 +47,7 @@ class OrpheusGUI:
         self.tuning_period_tile = ValueTile(Operator.tuning_period,(0,0,20,4),title="tuning period")
         self.widescan_period_tile = ValueTile(Operator.widescan_period,(0,0,20,4),title="widescan period")
         
-        self.ui=VStackTile((0,0,100,55),[HStackTile((0,0,100,15),[self.tuning_mode_tile,self.catalogue_tile]),
+        self.ui=VStackTile((0,0,100,55),[HStackTile((0,0,100,15),[VStackTile((0,0,35,5), [self.tuning_mode_tile, self.scan_sensors_tile]),self.catalogue_tile]),
                         HStackTile((0,0,100,4),[self.na_power_tile,
                                 self.na_fc_tile,
                 	       	    self.na_span_tile]),
@@ -75,6 +76,7 @@ class OrpheusGUI:
     def update_all_tiles(self, terminal):
         directory = dir(self)
         try:
+            #Read real values from the state variable in the API:
             dictionary = requests.get("http://localhost:8000/dict").json()
             self.message_tile.text=dictionary['last_task']
             self.error_msg_tile.text=dictionary['error_msg']
@@ -85,6 +87,7 @@ class OrpheusGUI:
             self.ui.draw(terminal)
             return
         for item in directory:
+            #Update the values in the tiles:
             if item[-5:]=='_tile':
                 try:
                     val = dictionary[item[0:-5]]

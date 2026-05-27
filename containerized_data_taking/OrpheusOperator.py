@@ -20,6 +20,7 @@ class OrpheusOperator:
         self.digitization_period = 0
         self.tuning_period = 0
         self.widescan_period=0
+        self.scan_sensors = 0
 
         #Initialize the VNA
         t_throwaway, self.na_power= query_SCPI(VNA_IP,VNA_PORT,VNA_TIMEOUT,"SOUR1:POW?\n") #Check this command is correct
