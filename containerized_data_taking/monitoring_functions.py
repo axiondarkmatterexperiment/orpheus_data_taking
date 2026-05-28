@@ -12,12 +12,12 @@ import pytz
 #                                 side A temp, side B temp, hall 1, hall 2,  hall 3,   hall 4,   curved mirror, dielectric and hfet temp sensors, flat mirror temp sensor,  outside can temp sensor
 from calibration_functions import SN_U04844, SN_X201099, SN_68179, SN_68253, SN_64753, SN_67247, RUOX_202A,                                        SN_X83781,                PT_100
 
-def log_sensors():
+def log_sensors(data_id=None):
     #log_magnet_temps()
     #log_outside_can_temp()
-    log_resonator_temps()
+    log_resonator_temps(data_id)
     #log_LHe_level()
-    log_hall_sensors() #I would like to keep all four hall sensors. Two on the top and two on the bottom. This is to test error in sensor values which the magnet test indicated.
+    log_hall_sensors(data_id) #I would like to keep all four hall sensors. Two on the top and two on the bottom. This is to test error in sensor values which the magnet test indicated.
                         # So I will need to have pairs of sensors at the same location, and pair the axial hall sensors with the rectangular ones.
 
 def establish_databases():
@@ -193,7 +193,7 @@ def log_resonator_temps(data_id=None):
 
     val_cal_curv = RUOX_202A(val_raw_curv)
     val_cal_diel = RUOX_202A(val_raw_diel)
-    val_cal_flat = SN_X83781(val_raw_flat)
+    val_cal_flat = RUOX_202A(val_raw_flat)
     val_cal_hfet = RUOX_202A(val_raw_hfet)
 
     log_sensor(sensor_name_curv, timestamp_curv, val_raw_curv, val_cal_curv, data_id)
