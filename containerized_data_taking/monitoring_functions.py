@@ -193,7 +193,7 @@ def log_resonator_temps(data_id=None):
 
     val_cal_curv = RUOX_202A(val_raw_curv)
     val_cal_diel = RUOX_202A(val_raw_diel)
-    val_cal_flat = RUOX_202A(val_raw_flat)
+    val_cal_flat = SN_X83781(val_raw_flat)
     val_cal_hfet = RUOX_202A(val_raw_hfet)
 
     log_sensor(sensor_name_curv, timestamp_curv, val_raw_curv, val_cal_curv, data_id)
