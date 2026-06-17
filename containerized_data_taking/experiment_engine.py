@@ -157,6 +157,7 @@ def take_data():
                     state.last_task = last_task
                 finish_timestamp, freqs, pows, = wait_for_digitization(return_digitization=True)
                 log_digitization(start_timestamp, freqs, pows, data_id = data_taking_id) #I would rather log the start timestamp instead of the finish timestamp
+                lo_power_switch(0)
                 last_task = "Digitization fc="+str(lo_freq)+" End:"+str(finish_timestamp)
                 with state.lock:
                     state.last_task = last_task
