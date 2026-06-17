@@ -419,17 +419,49 @@ def log_reflection_widescan(f_start_GHz, f_stop_GHz, na_power=-5, n_avgs=30, if_
     log_na_scan("reflection_widescan", timestamp, f, p)
     return f, p
 
-def set_lo_center_freq(center_freq):
-    IP_ADDRESS = "192.168.25.10"
-    PORT = 5025
+def set_lo_freq(center_freq):
+    #IP_ADDRESS = "192.168.25.10"
+    #PORT = 5025
+    IP_ADDRESS = "192.168.25.15"
+    PORT = 1234
     TIMEOUT = 5
-    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "FREQ:CW " + str(center_freq) + "; *OPC?\n")
+    #query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "FREQ:CW " + str(center_freq) + "; *OPC?\n")
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "FREQ:CENT " + str(center_freq) + "; *OPC?\n")
     #Check that it has been set properly, return false / zero if not:
-    timestamp, f_set = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "FREQ:CW?\n")
+    #timestamp, f_set = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "FREQ:CW?\n")
+    timestamp, f_set = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "FREQ:CENT?\n")
     if float(f_set) == center_freq:
         return float(f_set)
     else:
         return 0
+
+def set_lo_power(power_dBm):
+    #IP_ADDRESS = "192.168.25.10" #These are from the Agilent MXG signal generator.
+    #PORT = 5025
+    IP_ADDRESS = "192.168.25.15" #This is for the GPIB plugged into the back of the HP 83620A sweeper
+    PORT = 1234
+    TIMEOUT = 5
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "POW " + str(power_dBm) + "DBM; *OPC?\n")
+    #Check that it has been set properly, return NaN if not:
+    timestamp, pow_set = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "POW?\n")
+    if float(pow_set) == power_dBm:
+        return float(pow_set)
+    else:
+        return np.nan
+
+def lo_power_switch(off_or_on): #ON, OFF, 1, or 0 are all acceptable inputs.
+    #IP_ADDRESS = "192.168.25.10"
+    #PORT = 5025
+    IP_ADDRESS = "192.168.25.15"
+    PORT = 1234
+    TIMEOUT = 5
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "POW:STAT " + str(off_or_on) + "; *OPC?\n")
+    #Check that it has been set properly, return NaN if not:
+    timestamp, pow_switch = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "POW:STAT?\n")
+    if float(pow_switch) == off_or_on:
+        return float(pow_switch)
+    else:
+        return np.nan
 
 def start_digitization(acquisition_time):
     update_current_task("start_digitization")
