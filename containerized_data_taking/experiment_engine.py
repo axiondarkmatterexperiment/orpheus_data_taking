@@ -32,7 +32,7 @@ def take_data():
         if pause == False and scan_sensors == 1:
             try:
                 timestamp = dt.now(pytz.timezone('US/Pacific'))
-                log_sensors()
+                log_sensors(data_id=data_taking_id)
                 last_task = "sensors:"+str(timestamp)
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -146,10 +146,13 @@ def take_data():
                 #Set the frequency to a resolution of a hundredth of a Hz. Higher precision is rejected by the LO. The center of the IF band is currently 33.365 MHz, so I have hard-coded it in here.
                 #lo_set_freq = int(float(transmission_f0)*1e9*100)/100 - 33.365e6
                 lo_set_freq = int(float(transmission_f0)*1e9*100)/100 - 30.0e6
-                lo_freq = set_lo_center_freq(lo_set_freq)
+                lo_freq = set_lo_freq(lo_set_freq)
+                set_lo_power(15)
+                lo_power_switch(1)
                 start_timestamp = dt.now(pytz.timezone('US/Pacific'))
-                last_task = "Digitization fc="+str(lo_freq)+" Start:"+str(start_timestamp)
-                start_digitization(10)
+                log_cavity_params('lo_freq', start_timestamp, lo_freq, data_id = data_taking_id)
+                last_task = "Digitization fc="+str(lo_freq+0.03)+" Start:"+str(start_timestamp)
+                start_digitization(30)
                 with state.lock:
                     state.last_task = last_task
                 finish_timestamp, freqs, pows, = wait_for_digitization(return_digitization=True)
