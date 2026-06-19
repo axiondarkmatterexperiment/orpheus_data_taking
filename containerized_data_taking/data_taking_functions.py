@@ -419,18 +419,22 @@ def log_reflection_widescan(f_start_GHz, f_stop_GHz, na_power=-5, n_avgs=30, if_
     log_na_scan("reflection_widescan", timestamp, f, p)
     return f, p
 
-def set_lo_freq(center_freq):
+#Commented out lines are from when I was using the newer Agilent signal generator. --JS 06/18/2026
+def set_lo_freq(f_Hz):
     #IP_ADDRESS = "192.168.25.10"
     #PORT = 5025
+    #First I have to account for the frequency offset observed in the HP signal sweeper.
+    f_Hz_corrected = f_Hz-lo_freq_offset(f_Hz)
+
     IP_ADDRESS = "192.168.25.15"
     PORT = 1234
     TIMEOUT = 5
     #query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "FREQ:CW " + str(center_freq) + "; *OPC?\n")
-    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "FREQ:CENT " + str(center_freq) + "; *OPC?\n")
+    query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "FREQ:CENT " + str(f_Hz_corrected) + "; *OPC?\n")
     #Check that it has been set properly, return false / zero if not:
     #timestamp, f_set = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "FREQ:CW?\n")
     timestamp, f_set = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "FREQ:CENT?\n")
-    if float(f_set) == center_freq:
+    if float(f_set) == f_Hz:
         return float(f_set)
     else:
         return 0

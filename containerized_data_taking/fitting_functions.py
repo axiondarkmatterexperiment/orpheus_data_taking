@@ -165,11 +165,11 @@ def calculate_coupling(dy_over_C, s11_phase):
     return beta
 
 #This is based on measurements at room temperature. I think the absolute value might be off by ~.1cm or so, but the slope should be accurate at room temperature.
-def cavity_length_from_f0(f0_GHz):
-    a = -1.27314237
-    b = 35.30116348
-    length_cm = a*f0_GHz + b
-    return length_cm
+#def cavity_length_from_f0(f0_GHz):
+#    a = -1.27314237
+#    b = 35.30116348
+#    length_cm = a*f0_GHz + b
+#    return length_cm
 
 def f0_from_cavity_length(length_cm):
     #a = -1.27314237
@@ -180,11 +180,19 @@ def f0_from_cavity_length(length_cm):
     f0_GHz = a*length_cm + b 
     return f0_GHz
 
-##This uses the fit I made from the simulation of the cavity
-#def cavity_length_from_f0(f0_GHz):
-#    a = 0.045
-#    b = 15.119
-#    c = -1.014
-#    d = 31.693
-#    length_cm = (-c+2*a*b-np.sqrt((c-2*a*b)**2 - 4*a*(a*b**2+d-f0_GHz)))/(2*a)
-#    return length_cm
+#This uses the fit I made from the simulation of the cavity
+def cavity_length_from_f0(f0_GHz):
+    a = 0.045
+    b = 15.119
+    c = -1.014
+    d = 31.693
+    length_cm = (-c+2*a*b-np.sqrt((c-2*a*b)**2 - 4*a*(a*b**2+d-f0_GHz)))/(2*a)
+    return length_cm
+
+def lo_freq_offset(f_set):
+    f_set_GHz = f_set/1e9
+    m = -1.23191564e-05
+    b = -2.50618324e-06
+    offset_GHz = m*f_set_GHz + b
+    offset_Hz = offset_GHz*1e9
+    return offset_Hz
