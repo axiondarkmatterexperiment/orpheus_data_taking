@@ -21,7 +21,7 @@ port = 7776
 #A single revolution of the motor is 20,000 steps
 #The conversion is 157480.314961 steps per cm.
 steps_per_cm = 20000/0.127 #This is 157480.314961 steps per cm
-backlash_steps = 1000 #This is measured empirically (room temp)
+backlash_steps = 600#This is measured empirically (room temp)
 backlash_cm = backlash_steps/steps_per_cm
 #We aim for even spacing between all of the dielectric plates and the mirrors
 BDP_ratio = 4/5
@@ -90,7 +90,7 @@ def coordinated_motion(dl_cm):#dl_cm is the change in cavity length in cm
     CM_steps = wait_for_motor("curved_mirror")
 
     return BDP_steps, TDP_steps, CM_steps
-   
+
 def move_motor_cm(motor_name, move_cm):
     if motor_name == "bottom_dielectric_plate" or motor_name == "BDP":
         motor_IP = BDP_IP
@@ -105,6 +105,29 @@ def move_motor_cm(motor_name, move_cm):
     motor_command(motor_IP,"DI"+str(steps))
     motor_command(motor_IP,"FL")
     wait_for_motor(motor_name)
+    
+def move_motor_steps(motor_name, num_steps):
+    IP = select_motor(motor_name)
+    
+    motor_command(IP, "DI"+str(num_steps))
+    motor_command(IP, "FL")
+    steps = wait_for_motor(motor_name)
+    return steps
+
+def move_all_motors_steps(num_steps):
+    motor_command(BDP_IP,"DI"+str(num_steps))
+    motor_command(TDP_IP,"DI"+str(num_steps))
+    motor_command(CM_IP,"DI"+str(num_steps))
+
+    motor_command(BDP_IP,"FL")
+    motor_command(TDP_IP,"FL")
+    motor_command(CM_IP,"FL")
+
+    BDP_steps = wait_for_motor("bottom_dielectric_plate")
+    TDP_steps = wait_for_motor("top_dielectric_plate")
+    CM_steps = wait_for_motor("curved_mirror")
+
+    return BDP_steps, TDP_steps, CM_steps
 
 def wait_for_motor(motor_name):#Waits for the motor to stop turning and then returns the current number of steps in the motor register (how many steps it has moved cumulatively since last reset)
     IP = select_motor(motor_name)
@@ -128,19 +151,12 @@ def wait_for_motor(motor_name):#Waits for the motor to stop turning and then ret
     return steps
 
 #The purpose of this function is just to get past the backlash. This was measured empirically at room temperature. It might need to be re-measured when cold.
+#I do not use coordinated motion here because the mechanism of backlash is identical for the three motion stages. 
 def turn_cavity_around(direction):
     if direction=="pull_back":
-        coordinated_motion(-1*backlash_cm)
+        move_all_motors_steps(-1*backlash_steps)
     elif direction=="push_forward":
-        coordinated_motion(backlash_cm)
-    
-def move_motor(motor_name, num_steps):
-    IP = select_motor(motor_name)
-    
-    motor_command(IP, "DI"+str(num_steps))
-    motor_command(IP, "FL")
-    steps = wait_for_motor(motor_name)
-    return steps
+        move_all_motors_steps(backlash_steps)
 
 def reset_motor_suddenly(motor_name):
     IP = select_motor(motor_name)
