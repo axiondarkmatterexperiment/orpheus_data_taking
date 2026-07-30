@@ -15,7 +15,7 @@ import pytz
 #                                 side A temp, side B temp, hall 1, hall 2,  hall 3,   hall 4,  outside of can temp sensor
 from calibration_functions import SN_U04844, SN_X201099, SN_68179, SN_68253, SN_64753, SN_67247, PT_100
 from monitoring_functions import query_SCPI, write_SCPI, log_error, update_current_task
-from fitting_functions import data_lorentzian_fit, deconvolve_phase, calculate_coupling, func_pow_transmitted, func_pow_reflected
+from fitting_functions import data_lorentzian_fit, deconvolve_phase, calculate_coupling, func_pow_transmitted, func_pow_reflected, lo_freq_offset
 
 def log_cavity_params(param_name, timestamp, val, data_id = None):
     ''' 
@@ -403,7 +403,7 @@ def log_transmission_widescan(f_start_GHz, f_stop_GHz, na_power=-5, n_avgs=30, i
     im = iq[1::2]
     p = np.add(np.square(re),np.square(im)).astype(np.float64)
     p = p.tolist()
-    log_na_scan("transmission_widescan", timestamp, f, p)
+    log_na_scan("transmission_widescan", timestamp, f, p, data_id=data_id)
     return f, p
 
 def log_reflection_widescan(f_start_GHz, f_stop_GHz, na_power=-5, n_avgs=30, if_bw_Hz = 1e4):
@@ -434,7 +434,7 @@ def set_lo_freq(f_Hz):
     #Check that it has been set properly, return false / zero if not:
     #timestamp, f_set = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "FREQ:CW?\n")
     timestamp, f_set = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "FREQ:CENT?\n")
-    if float(f_set) == f_Hz:
+    if np.abs(float(f_set)-f_Hz_corrected) < 1e4: #Just a simple check. It won't match perfectly because of the offset
         return float(f_set)
     else:
         return 0
@@ -495,7 +495,7 @@ def wait_for_digitization(return_digitization=True):
             digitizing = True
         elif dig_status == "IDLE":
             digitizing = False
-        time.sleep(1)
+        time.sleep(0.5)
 
     if return_digitization:
         timestamp, spectrum = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "GET:LAST_SPECTRUM?\n")
@@ -508,6 +508,17 @@ def wait_for_digitization(return_digitization=True):
         freqs = np.genfromtxt(freqs, dtype=float, delimiter=',')
         freqs = freqs.tolist()
         return timestamp, freqs, pows
+
+def log_DC_power_monitor(data_id=None):
+    update_current_task("DC_power_monitor")
+    IP_ADDRESS = "192.168.25.12"
+    PORT = 1234
+    TIMEOUT=5
+
+    timestamp, vdc_raw = query_SCPI(IP_ADDRESS, PORT, TIMEOUT, "MEAS:VOLT:DC?\n")
+    vdc_float = float(vdc_raw)
+    log_cavity_params('power_level_V', timestamp, vdc_float, data_id=data_id)
+    
 
 def tune_while_tracking_mode(initial_f0_GHz, initial_span_GHz, tune_distance_cm, tune_increment_cm, measure_coupling=True):
     from motor_functions import coordinated_motion

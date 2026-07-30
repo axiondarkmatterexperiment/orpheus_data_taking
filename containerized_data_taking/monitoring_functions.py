@@ -13,8 +13,8 @@ import pytz
 from calibration_functions import SN_U04844, SN_X201099, SN_68179, SN_68253, SN_64753, SN_67247, RUOX_202A,                                        SN_X83781,                PT_100
 
 def log_sensors(data_id=None):
-    #log_magnet_temps()
-    #log_outside_can_temp()
+    log_magnet_temps()
+    log_outside_can_temp()
     log_resonator_temps(data_id)
     #log_LHe_level()
     log_hall_sensors(data_id) #I would like to keep all four hall sensors. Two on the top and two on the bottom. This is to test error in sensor values which the magnet test indicated.

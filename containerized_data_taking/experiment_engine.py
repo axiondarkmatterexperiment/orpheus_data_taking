@@ -146,9 +146,11 @@ def take_data():
             try:
                 #Set the frequency to a resolution of a hundredth of a Hz. Higher precision is rejected by the LO. The center of the IF band is currently 33.365 MHz, so I have hard-coded it in here.
                 #lo_set_freq = int(float(transmission_f0)*1e9*100)/100 - 33.365e6
-                lo_set_freq = int(float(transmission_f0)*1e9*100)/100 - 30.0e6
-                lo_freq = set_lo_freq(lo_set_freq)
-                set_lo_power(15)
+                #lo_set_freq = int(float(transmission_f0)*1e9*100)/100 - 30.0e6
+                lo_set_freq_Y_factor_measurement = int(float(transmission_f0)*1e9*100)/100 - 30.0e6 - 15e6 #Also subtracting 15e6 Hz because we want to be off of the resonance for the Y_factor measurement
+                #lo_freq = set_lo_freq(lo_set_freq)
+                lo_freq = set_lo_freq(lo_set_freq_Y_factor_measurement)
+                set_lo_power(17)
                 lo_power_switch(1)
                 start_timestamp = dt.now(pytz.timezone('US/Pacific'))
                 log_cavity_params('lo_freq', start_timestamp, lo_freq, data_id = data_taking_id)
@@ -158,6 +160,12 @@ def take_data():
                     state.last_task = last_task
                 finish_timestamp, freqs, pows, = wait_for_digitization(return_digitization=True)
                 log_digitization(start_timestamp, freqs, pows, data_id = data_taking_id) #I would rather log the start timestamp instead of the finish timestamp
+                try:
+                    log_DC_power_monitor(data_id = data_taking_id)
+                except Exception as e:
+                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                    log_error(finish_timestamp, repr(e), + "--line No." + str(exc_tb.lineno))
+                    state.error_msg = repr(e) + "--line No. " + str(exc_tb.tb_lineno)
                 lo_power_switch(0)
                 last_task = "Digitization fc="+str(lo_freq)+" End:"+str(finish_timestamp)
                 with state.lock:
