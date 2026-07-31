@@ -68,7 +68,7 @@ def take_data():
                 #Only update the values if they are not NaNs
                 if np.isfinite(na_fc_temp):
                     na_fc = na_fc_temp
-                if np.isfinite(transmission_Q):
+                if np.isfinite(transmission_Q_temp):
                     transmission_Q = transmission_Q_temp
                 timestamp = dt.now(pytz.timezone('US/Pacific'))
                 last_task = "Transmission:"+str(timestamp)
