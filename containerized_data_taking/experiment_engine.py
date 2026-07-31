@@ -61,8 +61,10 @@ def take_data():
                 Q_width = na_fc/transmission_Q
                 na_span = Q_width*na_transmission_Q_widths
                 #wider window without param logging just to search for the peak
-                na_fc, trash_Q = log_transmission_scan(na_fc,1.5*na_span,n_avgs = 1, fitting=True,param_logging=False)
-                na_fc = na_fc/1e9
+                na_fc_throwaway_temp, trash_Q = log_transmission_scan(na_fc,1.5*na_span,n_avgs = 1, fitting=True,param_logging=False)
+                if np.isfinite(na_fc_throwaway_temp):
+                    na_fc = na_fc_throwaway_temp/1e9
+                #na_fc = na_fc/1e9
                 #regular window with param logging to measure Q
                 na_fc_temp, transmission_Q_temp = log_transmission_scan(na_fc, na_span, data_id=data_taking_id)
                 #Only update the values if they are not NaNs
