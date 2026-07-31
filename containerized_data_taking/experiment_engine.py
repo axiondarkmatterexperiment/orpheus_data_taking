@@ -156,10 +156,10 @@ def take_data():
             try:
                 #Set the frequency to a resolution of a hundredth of a Hz. Higher precision is rejected by the LO. The center of the IF band is currently 33.365 MHz, so I have hard-coded it in here.
                 #lo_set_freq = int(float(transmission_f0)*1e9*100)/100 - 33.365e6
-                #lo_set_freq = int(float(transmission_f0)*1e9*100)/100 - 30.0e6
-                lo_set_freq_Y_factor_measurement = int(float(transmission_f0)*1e9*100)/100 - 30.0e6 - 15e6 #Also subtracting 15e6 Hz because we want to be off of the resonance for the Y_factor measurement
-                #lo_freq = set_lo_freq(lo_set_freq)
-                lo_freq = set_lo_freq(lo_set_freq_Y_factor_measurement)
+                lo_set_freq = int(float(transmission_f0)*1e9*100)/100 - 30.0e6
+                #lo_set_freq_Y_factor_measurement = int(float(transmission_f0)*1e9*100)/100 - 30.0e6 - 15e6 #Also subtracting 15e6 Hz because we want to be off of the resonance for the Y_factor measurement
+                lo_freq = set_lo_freq(lo_set_freq)
+                #lo_freq = set_lo_freq(lo_set_freq_Y_factor_measurement)
                 set_lo_power(17)
                 lo_power_switch(1)
                 start_timestamp = dt.now(pytz.timezone('US/Pacific'))
