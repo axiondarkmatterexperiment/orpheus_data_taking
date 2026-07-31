@@ -6,6 +6,7 @@ from monitoring_functions import *
 import time
 import sys
 from datetime import datetime as dt
+import numpy as np
 steps_per_cm = 20000/0.127
 backlash_steps = 600
 
@@ -63,7 +64,12 @@ def take_data():
                 na_fc, trash_Q = log_transmission_scan(na_fc,1.5*na_span,n_avgs = 1, fitting=True,param_logging=False)
                 na_fc = na_fc/1e9
                 #regular window with param logging to measure Q
-                na_fc, transmission_Q = log_transmission_scan(na_fc, na_span, data_id=data_taking_id)
+                na_fc_temp, transmission_Q_temp = log_transmission_scan(na_fc, na_span, data_id=data_taking_id)
+                #Only update the values if they are not NaNs
+                if np.isfinite(na_fc_temp):
+                    na_fc = na_fc_temp
+                if np.isfinite(transmission_Q):
+                    transmission_Q = transmission_Q_temp
                 timestamp = dt.now(pytz.timezone('US/Pacific'))
                 last_task = "Transmission:"+str(timestamp)
                 with state.lock:
@@ -97,11 +103,13 @@ def take_data():
             try:
                 Q_width = na_fc/transmission_Q
                 na_span = Q_width*na_reflection_Q_widths
-                na_fc, reflection_Q, beta = log_reflection_scan(na_fc, na_span, data_id=data_taking_id)
+                na_fc, reflection_Q, beta_temp = log_reflection_scan(na_fc, na_span, data_id=data_taking_id)
+                if np.isfinite(beta_temp):
+                    beta = beta_temp
                 timestamp = dt.now(pytz.timezone('US/Pacific'))
                 last_task = "Reflection:"+str(timestamp)
                 with state.lock:
-                    state.na_fc = float(na_fc/1e9)
+                    #state.na_fc = float(na_fc/1e9) #I dont' think this line should be here
                     state.beta = float(beta)
                     state.last_task = last_task
                     state.update_json()
