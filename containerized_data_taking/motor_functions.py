@@ -166,3 +166,13 @@ def reset_all_motors_suddenly():
     motor_command(BDP_IP, "RE")
     motor_command(TDP_IP, "RE")
     motor_command(CM_IP, "RE")
+
+def check_motors():
+    BDP_AL = motor_command(BDP_IP, "AL")[-4::]
+    TDP_AL = motor_command(TDP_IP, "AL")[-4::]
+    CM_AL = motor_command(CM_IP, "AL")[-4::]
+
+    if BDP_AL=='0000' and TDP_AL=='0000' and CM_AL=='0000':
+        return True
+    else:
+        return False

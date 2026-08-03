@@ -160,12 +160,12 @@ def take_data():
                 #lo_set_freq_Y_factor_measurement = int(float(transmission_f0)*1e9*100)/100 - 30.0e6 - 15e6 #Also subtracting 15e6 Hz because we want to be off of the resonance for the Y_factor measurement
                 lo_freq = set_lo_freq(lo_set_freq)
                 #lo_freq = set_lo_freq(lo_set_freq_Y_factor_measurement)
-                set_lo_power(17)
+                set_lo_power(16.5)
                 lo_power_switch(1)
                 start_timestamp = dt.now(pytz.timezone('US/Pacific'))
                 log_cavity_params('lo_freq', start_timestamp, lo_freq, data_id = data_taking_id)
                 last_task = "Digitization fc="+str(lo_freq+0.03)+" Start:"+str(start_timestamp)
-                start_digitization(30)
+                start_digitization(10)
                 with state.lock:
                     state.last_task = last_task
                 finish_timestamp, freqs, pows, = wait_for_digitization(return_digitization=True)
@@ -199,8 +199,14 @@ def take_data():
             min_cavity_length = state.min_cavity_length
             dl_cm = state.dl_cm
 
+            #Check that all of the motors aren't in alarm mode in which case it will not turn.
+            motors_OK = check_motors()
+            if not motors_OK:
+                state.error_msg = "One or more motors are alarmed"
+
+
         #2- take action if requirements are met
-        if tuning_period != 0 and loop_counter % tuning_period == 0 and pause == False:
+        if tuning_period != 0 and loop_counter % tuning_period == 0 and pause == False and motors_OK:
             try:
                 if cavity_length <= max_cavity_length-dl_cm and cavity_length >= min_cavity_length+dl_cm:
                     #Update the GUI message tile:
