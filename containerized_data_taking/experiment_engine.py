@@ -1,7 +1,7 @@
 from state import state
 from data_taking_functions import *
 from fitting_functions import f0_from_cavity_length
-from motor_functions import coordinated_motion, move_all_motors_steps
+from motor_functions import coordinated_motion, move_all_motors_steps, check_motors
 from monitoring_functions import *
 import time
 import sys
